@@ -10,6 +10,26 @@ const FORM={'R-SKIM':'Choose the heading number (i, ii, iii\u2026) that sums up 
 const STOP=new Set('the a an of to in on and or is are was were be been for with that this which what who by as at from it its their his her than more most some any each other into about should must can could will would does did do has have had not no only all both your you write words answer questions choose letter paragraph text complete'.split(' '));
 const norm=s=>s.toLowerCase().replace(/&[a-z]+;/g,'').replace(/[.'"’()]/g,'').replace(/\s+/g,' ').trim();
 function keys(a){const k=a.split(/:\s/)[0];const out=[];k.split(/\s*\/\s*/).forEach(o=>{out.push(norm(o));out.push(norm(o.replace(/\(.*?\)/g,'')));});return out.filter(Boolean);}
+const NUMW={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50};
+const MINW={'oclock':0,'fifteen':15,'thirty':30,'fortyfive':45,'fortyfive':45,'oh five':5};
+// Canonical form for times and numbers: "6:30", "6.30 a.m.", "six thirty", "half past six" -> "6:30"; "three" -> "3".
+function canon(x){const r=canon0(x);return r.replace(/^(\d{1,2}):00$/,'$1');}
+function canon0(x){let s=String(x).toLowerCase().replace(/&[a-z]+;/g,'').replace(/[’']/g,'').replace(/\s+/g,' ').trim();
+  s=s.replace(/\s?(a\.?\s?m\.?|p\.?\s?m\.?|in the (morning|afternoon|evening)|at night)$/,'').trim();
+  const w=t=>t in NUMW?NUMW[t]:(/^\d+$/.test(t)?+t:null);
+  let m;
+  if(m=s.match(/^half past (\w+)$/)){const h=w(m[1]);if(h!=null)return h+':30';}
+  if(m=s.match(/^quarter past (\w+)$/)){const h=w(m[1]);if(h!=null)return h+':15';}
+  if(m=s.match(/^quarter to (\w+)$/)){const h=w(m[1]);if(h!=null)return (h-1)+':45';}
+  if(m=s.match(/^(\w+) ?o ?clock$/)){const h=w(m[1]);if(h!=null)return h+':00';}
+  if(m=s.match(/^(\d{1,2}) ?[:.] ?(\d{2})$/))return (+m[1])+':'+m[2];
+  if(m=s.match(/^(\w+) (\w+(?:[- ]\w+)?)$/)){const h=w(m[1]);const mm=m[2].replace(/[- ]/g,'');const mv=mm==='thirty'?30:mm==='fifteen'?15:mm==='fortyfive'?45:null;if(h!=null&&h<=12&&mv!=null)return h+':'+String(mv).padStart(2,'0');}
+  if((m=s.match(/^(\d{1,2})$/))&&/(a\.?m|p\.?m|morning|evening|afternoon)/.test(String(x).toLowerCase()))return (+m[1])+':00';
+  if(s in NUMW)return String(NUMW[s]);
+  if(m=s.match(/^(twenty|thirty|forty|fifty)[- ]?(one|two|three|four|five|six|seven|eight|nine)$/))return String(NUMW[m[1]]+NUMW[m[2]]);
+  return s.replace(/\s+/g,'');}
+window.IYP_MATCH=function(given,answer){const v=norm(given);if(!v)return false;const k=keys(answer);const cv=canon(given);
+  return k.some(x=>x===v||x.replace(/\s+/g,'')===v.replace(/\s+/g,'')||(x.length>2&&v.replace(/^the /,'')===x.replace(/^the /,'')))||answer.split(/:\s/)[0].split('/').some(o=>[o,o.replace(/\(.*?\)/g,'')].some(r=>canon(r)===cv));};
 function lev(a,b){const m=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=m[0];m[0]=i;for(let j=1;j<=b.length;j++){const t=m[j];m[j]=Math.min(m[j]+1,m[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t;}}return m[b.length];}
 function tagFor(q,li,ans,i){
   if(q.dataset.tags){const t=q.dataset.tags.split(',');return t[i%t.length];}
@@ -47,7 +67,7 @@ document.querySelectorAll('.quiz').forEach(q=>{
   bar.append(chk,sc,tmb,tm,rs);q.insertBefore(bar,q.children[1]);
   let t0=Date.now(),iv=null;const sid=location.pathname.split('/').pop().replace('.html','')+'_'+q.id;
   chk.onclick=()=>{let n=0;const given=[],right=[];q.querySelectorAll('.qfb').forEach(x=>x.remove());
-    q.querySelectorAll('.ans-in').forEach((inp,i)=>{const k=JSON.parse(inp.dataset.k);const v=norm(inp.value);const ok=!!v&&k.some(x=>x===v||(x.length>2&&v.replace(/^the /,'')===x.replace(/^the /,'')));
+    q.querySelectorAll('.ans-in').forEach((inp,i)=>{const ok=window.IYP_MATCH(inp.value,as[i].textContent);
       inp.classList.toggle('ok',ok);inp.classList.toggle('bad',!ok);const fb=inp.nextSibling;fb.className='fb '+(ok?'ok':'bad');fb.textContent=ok?'\u2713 Correct':'\u2717 Answer: '+as[i].textContent.split(/:\s/)[0];
       if(ok)n++;else{const cz=tags[i].startsWith('L-')?cause(inp.value,as[i].textContent,tags[i],tr):'';feedback(qs[i],qtext[i],as[i].textContent,tags[i],cz);
         window.IYP_MISTAKE&&window.IYP_MISTAKE({section:sid,q:i+1,tag:tags[i],cause:cz,given:inp.value.slice(0,80),correct:as[i].textContent.split(/:\s/)[0].slice(0,120)}).catch(()=>{});}
