@@ -1,7 +1,7 @@
 // Sign-in gate + protected content loader (project: pacetoielts). SDK versions pinned.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, getDocs, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, addDoc, getDocs, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA-Qwag6CftRpdXnLgEuXQwfQ158l9gv-o",
   authDomain: "pacetoielts.firebaseapp.com",
@@ -40,6 +40,13 @@ function renderBox(u){
 const SID=/^(reading_passage[1-3]|listening_section[1-6])$/;
 window.IYP_SAVE=async(id,score,total,title)=>{const u=auth.currentUser;if(!u||!SID.test(id))return;
   await setDoc(doc(db,'users',u.uid,'scores',id),{score:Math.trunc(score),total:Math.trunc(total),title:String(title).slice(0,120),date:serverTimestamp()});};
+const SEP='\u241F';
+window.IYP_ATTEMPT=async(r)=>{const u=auth.currentUser;if(!u||!SID.test(r.section))return;const max=Math.trunc(r.max),score=Math.trunc(r.score);
+  await addDoc(collection(db,'users',u.uid,'attempts'),{uid:u.uid,section:r.section,score:score,max:max,pct:Math.round(100*score/max),timeSec:Math.min(36000,Math.max(0,Math.trunc(r.timeSec))),
+    given:r.given.map(x=>x.replace(SEP,' ')).join(SEP).slice(0,2000),correct:r.correct.map(x=>x.replace(SEP,' ')).join(SEP).slice(0,4000),results:r.results,date:serverTimestamp()});};
+async function touchProfile(u){try{const t=(await u.getIdTokenResult()).claims;const ref=doc(db,'users',u.uid);
+  const base={displayName:t.name||'',email:t.email||'',photoURL:t.picture||'',lastSeen:serverTimestamp()};
+  const s=await getDoc(ref); if(s.exists()) await setDoc(ref,base,{merge:true}); else await setDoc(ref,{...base,firstSeen:serverTimestamp()});}catch(e){}}
 window.IYP_LOADP=async()=>{const u=auth.currentUser;if(!u)return{};const s=await getDocs(collection(db,'users',u.uid,'scores'));const o={};
   s.forEach(d=>{const r=d.data();o[d.id]={score:r.score,total:r.total,title:r.title,date:r.date?r.date.toDate().toISOString():''};});return o;};
 async function loadContent(){
@@ -52,6 +59,7 @@ async function loadContent(){
   }catch(e){const g=document.getElementById('gate');if(g){g.replaceChildren(el('p',{},'Sorry, this page could not load. Please refresh, or sign in again.'));}}
 }
 onAuthStateChanged(auth,u=>{
+  if(u) touchProfile(u);
   renderBox(u);
   window.IYP_USER=u?{uid:u.uid,name:u.displayName,email:u.email}:null;
   if(gated){ if(!u){location.replace('index.html?next='+encodeURIComponent(page));return;} loadContent(); }
