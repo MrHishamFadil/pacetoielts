@@ -73,3 +73,4 @@ audio{width:100%;margin:10px 0}
 footer{background:var(--navy);color:#cfd6e6;padding:36px 0;font-size:.95rem}footer a{color:var(--gold2)}footer .disc{opacity:.85;font-style:italic}
 .disclaimer{font-style:italic;color:var(--muted);font-size:.92rem}
 .lessons li{margin:.4rem 0}
+.gate{min-height:50vh;display:flex;align-items:center;justify-content:center;color:#555}.lead.small{font-size:.95rem;opacity:.85}
