@@ -1,0 +1,12 @@
+{
+  "hosting": {"public": ".", "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]},
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "IELTS at Your Pace",
+        "supportEmail": "hisham.abdelfadil@gmail.com",
+        "authorizedRedirectUris": ["https://mrhishamfadil.github.io", "https://pacetoielts.web.app", "https://pacetoielts.firebaseapp.com"]
+      }
+    }
+  }
+}
