@@ -74,3 +74,13 @@ footer{background:var(--navy);color:#cfd6e6;padding:36px 0;font-size:.95rem}foot
 .disclaimer{font-style:italic;color:var(--muted);font-size:.92rem}
 .lessons li{margin:.4rem 0}
 .gate{min-height:50vh;display:flex;align-items:center;justify-content:center;color:#555}.lead.small{font-size:.95rem;opacity:.85}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.qfb{margin:8px 0 4px;padding:10px 12px;border-left:4px solid var(--gold);background:#fffaf0;border-radius:8px;font-size:.92rem}.qfb p{margin:.25rem 0}
+.qnav{position:sticky;top:66px;z-index:6;display:flex;gap:8px;overflow-x:auto;padding:8px 10px;margin:0 0 14px;background:var(--ivory2);border:1px solid var(--line);border-radius:12px;white-space:nowrap}.qnav a{font-size:.88rem;padding:4px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);text-decoration:none}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tabs .tab{border-radius:999px}
+.tablewrap{overflow-x:auto}.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:10px 0}.formgrid label{display:flex;flex-direction:column;font-size:.9rem;gap:4px}
+textarea{width:100%;font:inherit;padding:10px;border:2px solid var(--line);border-radius:10px;background:var(--ivory)}select{font:inherit;padding:8px;border-radius:8px}
+.pill{font-size:.75rem;padding:2px 10px;border-radius:999px;background:var(--line);vertical-align:middle}.pill.todo{background:#fbecec}.pill.submitted{background:#fff3cd}.pill.marked{background:#eaf6ef}
+.subtext{white-space:pre-wrap;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;max-height:420px;overflow:auto}.prompt{font-style:italic}.fbbox{margin-top:10px;padding:10px;border-top:2px solid var(--gold)}.cmt{margin:.2rem 0}
+.labels{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px;font-size:.88rem}.linkbtn{background:none;border:0;color:var(--navy);text-decoration:underline;padding:0;cursor:pointer}
+@media print{header,footer,.pager,#tabs,#view>button,#view>select{display:none!important}.report{font-size:11pt}details{display:block}details>*{display:block}}

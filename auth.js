@@ -1,7 +1,7 @@
 // Sign-in gate + protected content loader (project: pacetoielts). SDK versions pinned.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, addDoc, getDocs, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, addDoc, deleteDoc, getDocs, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA-Qwag6CftRpdXnLgEuXQwfQ158l9gv-o",
   authDomain: "pacetoielts.firebaseapp.com",
@@ -20,7 +20,7 @@ const G='<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 
 const PAGES=['reading','listening','writing','speaking','vocabulary','lessons','band-scores','study-plan','dashboard','faq','tips'];
 const page=(location.pathname.split('/').pop()||'index.html').replace(/\.html$/,'')||'index';
 const gated=document.querySelector('main[data-gated]')!==null;
-function safeNext(){const n=new URLSearchParams(location.search).get('next');return PAGES.includes(n)?n+'.html':null;}
+function safeNext(){const n=new URLSearchParams(location.search).get('next');return (n&&/^[a-z0-9-]{1,40}$/.test(n)&&n!=='admin'&&n!=='index')?n+'.html':null;}
 async function login(){ try{ await signInWithPopup(auth,provider);}catch(e){ if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){await signInWithRedirect(auth,provider);} else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){alert('Sign-in failed. Please try again.');} } }
 window.iypLogin=login;
 function el(tag,attrs,text){const e=document.createElement(tag);for(const k in attrs||{})e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;return e;}
@@ -37,13 +37,17 @@ function renderBox(u){
   bindLogin();
 }
 // progress API used by app.js (owner-only per Firestore rules)
-const SID=/^(reading_passage[1-3]|listening_section[1-6])$/;
+const SID=/^(reading_passage[1-3]|listening_section[1-6]|[a-z0-9-]{2,30}_drill[1-3])$/;
 window.IYP_SAVE=async(id,score,total,title)=>{const u=auth.currentUser;if(!u||!SID.test(id))return;
   await setDoc(doc(db,'users',u.uid,'scores',id),{score:Math.trunc(score),total:Math.trunc(total),title:String(title).slice(0,120),date:serverTimestamp()});};
 const SEP='\u241F';
 window.IYP_ATTEMPT=async(r)=>{const u=auth.currentUser;if(!u||!SID.test(r.section))return;const max=Math.trunc(r.max),score=Math.trunc(r.score);
   await addDoc(collection(db,'users',u.uid,'attempts'),{uid:u.uid,section:r.section,score:score,max:max,pct:Math.round(100*score/max),timeSec:Math.min(36000,Math.max(0,Math.trunc(r.timeSec))),
-    given:r.given.map(x=>x.replace(SEP,' ')).join(SEP).slice(0,2000),correct:r.correct.map(x=>x.replace(SEP,' ')).join(SEP).slice(0,4000),results:r.results,date:serverTimestamp()});};
+    given:r.given.map(x=>x.replace(SEP,' ')).join(SEP).slice(0,2000),correct:r.correct.map(x=>x.replace(SEP,' ')).join(SEP).slice(0,4000),results:r.results,tags:String(r.tags||'').slice(0,400),date:serverTimestamp()});};
+window.IYP_MISTAKE=async(m)=>{const u=auth.currentUser;if(!u||!SID.test(m.section))return;await addDoc(collection(db,'users',u.uid,'mistakes'),{section:m.section,q:m.q,tag:m.tag,cause:m.cause,given:m.given,correct:m.correct,date:serverTimestamp()});};
+window.IYP_LOADATT=async()=>{const u=auth.currentUser;if(!u)return[];const s=await getDocs(collection(db,'users',u.uid,'attempts'));return s.docs.map(d=>d.data());};
+window.IYP_LOADMIS=async()=>{const u=auth.currentUser;if(!u)return[];const s=await getDocs(collection(db,'users',u.uid,'mistakes'));return s.docs.map(d=>({id:d.id,...d.data(),date:d.data().date?d.data().date.toDate():null})).sort((x,y)=>(y.date||0)-(x.date||0));};
+window.IYP_DELMIS=async(id)=>{const u=auth.currentUser;await deleteDoc(doc(db,'users',u.uid,'mistakes',id));};
 async function touchProfile(u){try{const t=(await u.getIdTokenResult()).claims;const ref=doc(db,'users',u.uid);
   const base={displayName:t.name||'',email:t.email||'',photoURL:t.picture||'',lastSeen:serverTimestamp()};
   const s=await getDoc(ref); if(s.exists()) await setDoc(ref,base,{merge:true}); else await setDoc(ref,{...base,firstSeen:serverTimestamp()});}catch(e){}}
@@ -56,6 +60,7 @@ async function loadContent(){
     main.innerHTML=snap.data().html; // trusted, write-locked author content (rules: write=false)
     main.removeAttribute('data-gated');
     if(window.IYP_INIT) window.IYP_INIT();
+    document.dispatchEvent(new CustomEvent('iyp-content',{detail:page}));
   }catch(e){const g=document.getElementById('gate');if(g){g.replaceChildren(el('p',{},'Sorry, this page could not load. Please refresh, or sign in again.'));}}
 }
 onAuthStateChanged(auth,u=>{
