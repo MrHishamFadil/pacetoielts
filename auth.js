@@ -48,7 +48,9 @@ window.IYP_MISTAKE=async(m)=>{const u=auth.currentUser;if(!u||!SID.test(m.sectio
 window.IYP_LOADATT=async()=>{const u=auth.currentUser;if(!u)return[];const s=await getDocs(collection(db,'users',u.uid,'attempts'));return s.docs.map(d=>d.data());};
 window.IYP_LOADMIS=async()=>{const u=auth.currentUser;if(!u)return[];const s=await getDocs(collection(db,'users',u.uid,'mistakes'));return s.docs.map(d=>({id:d.id,...d.data(),date:d.data().date?d.data().date.toDate():null})).sort((x,y)=>(y.date||0)-(x.date||0));};
 window.IYP_DELMIS=async(id)=>{const u=auth.currentUser;await deleteDoc(doc(db,'users',u.uid,'mistakes',id));};
-async function touchProfile(u){try{const t=(await u.getIdTokenResult()).claims;const ref=doc(db,'users',u.uid);
+const TUTORS=['hisham.abdelfadil2@gmail.com','hisham.abdelfadil@gmail.com'];
+async function autoJoin(u){try{if(TUTORS.includes(u.email))return;const r=doc(db,'members',u.uid);const m=await getDoc(r);if(!m.exists())await setDoc(r,{classId:'all',code:'',joinedAt:serverTimestamp()});}catch(e){}}
+async function touchProfile(u){autoJoin(u);try{const t=(await u.getIdTokenResult()).claims;const ref=doc(db,'users',u.uid);
   const base={displayName:t.name||'',email:t.email||'',photoURL:t.picture||'',lastSeen:serverTimestamp()};
   const s=await getDoc(ref); if(s.exists()) await setDoc(ref,base,{merge:true}); else await setDoc(ref,{...base,firstSeen:serverTimestamp()});}catch(e){}}
 window.IYP_LOADP=async()=>{const u=auth.currentUser;if(!u)return{};const s=await getDocs(collection(db,'users',u.uid,'scores'));const o={};

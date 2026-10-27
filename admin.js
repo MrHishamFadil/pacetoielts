@@ -34,7 +34,7 @@ function exportAll(){const rows=[['name','email','class','section','score','max'
 function Classes(v){const f=mk('div','card');const nm=mk('input',null,'ans-in');nm.placeholder='Class name, e.g. Jeddah Saturday group';nm.maxLength=80;const m=mk('p');
   f.append(mk('h3','Create a class'),nm,btn('Create',async()=>{const name=nm.value.trim();if(!name){m.textContent='Enter a name.';return;}const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';const r=crypto.getRandomValues(new Uint8Array(6));const code=[...r].map(x=>A[x%A.length]).join('');
     try{const ref=doc(collection(db,'classes'));await setDoc(ref,{name,code,createdAt:serverTimestamp()});await setDoc(doc(db,'joinCodes',code),{classId:ref.id});D.classes[ref.id]={name,code};show('Classes');}catch(e){m.textContent='Could not create the class.';}},'gold'),m);v.append(f);
-  Object.entries(D.classes).forEach(([id,c])=>{const k=mk('div',null,'card');const n=Object.values(D.members).filter(x=>x.classId===id).length;k.append(mk('h3',c.name),mk('p',`Join code: ${c.code} \u00b7 ${n} students`),mk('p','Students open My homework and enter this code once.','disclaimer'));v.append(k);});}
+  Object.entries(D.classes).forEach(([id,c])=>{const k=mk('div',null,'card');const n=Object.values(D.members).filter(x=>x.classId===id).length;k.append(mk('h3',c.name),mk('p',id==='all'?`Everyone joins automatically (no code) \u00b7 ${n} students`:`Join code: ${c.code} \u00b7 ${n} students`),mk('p','Students open My homework and enter this code once.','disclaimer'));v.append(k);});}
 function Assignments(v){const f=mk('div','card');f.append(mk('h3','New assignment'));const g=mk('div',null,'formgrid');
   const title=mk('input',null,'ans-in');title.placeholder='Title';title.maxLength=120;const kind=mk('select');['lesson','mock','writing','speaking'].forEach(k=>kind.append(new Option(k,k)));
   const lk=mk('select');PAGES.forEach(p=>lk.append(new Option(p||'(no page link)',p)));const task=mk('select');['','W1','W2','S1','S2','S3'].forEach(k=>task.append(new Option(k||'(task type)',k)));
@@ -81,7 +81,7 @@ async function load(){db=getFirestore(getApp());const ts=x=>x&&x.toDate?x.toDate
   const [us,at,mi,me,cl,as,su,fb]=await Promise.all([getDocs(collection(db,'users')),getDocs(collectionGroup(db,'attempts')),getDocs(collectionGroup(db,'mistakes')),getDocs(collection(db,'members')),getDocs(collection(db,'classes')),getDocs(collection(db,'assignments')),getDocs(collection(db,'submissions')),getDocs(collection(db,'feedback'))]);
   us.forEach(d=>{const x=d.data();D.users[d.id]={displayName:x.displayName,email:x.email,lastSeen:ts(x.lastSeen)};});
   at.forEach(d=>{const x=d.data();D.att.push({...x,date:ts(x.date)||new Date(0)});});mi.forEach(d=>D.mis.push({...d.data(),uid:d.ref.parent.parent.id}));
-  me.forEach(d=>D.members[d.id]=d.data());cl.forEach(d=>D.classes[d.id]=d.data());as.forEach(d=>D.asg.push({id:d.id,...d.data(),due:ts(d.data().due)}));
+  me.forEach(d=>D.members[d.id]=d.data());D.classes.all={name:'All students',code:''};cl.forEach(d=>{if(d.id!=='all')D.classes[d.id]=d.data();});as.forEach(d=>D.asg.push({id:d.id,...d.data(),due:ts(d.data().due)}));
   su.forEach(d=>D.subs.push({id:d.id,...d.data(),createdAt:ts(d.data().createdAt)||new Date(0)}));fb.forEach(d=>D.fb[d.id]=d.data());
   $('adm').replaceChildren();nav();show('Students');}
 document.addEventListener('iyp-auth',()=>{const u=getAuth(getApp()).currentUser;

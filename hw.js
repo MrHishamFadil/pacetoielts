@@ -10,17 +10,17 @@ let db,auth,u,root;
 document.addEventListener('iyp-content',e=>{if(e.detail!=='homework')return;db=getFirestore(getApp());auth=getAuth(getApp());u=auth.currentUser;root=document.getElementById('hw');if(u&&root)load().catch(()=>{root.replaceChildren(mk('p',null,'Could not load homework. Please refresh.'));});});
 async function load(){
   const mem=await getDoc(doc(db,'members',u.uid));const classId=mem.exists()?mem.data().classId:'';
-  const qs=[getDocs(query(collection(db,'assignments'),where('studentUid','==',u.uid)))];if(classId)qs.push(getDocs(query(collection(db,'assignments'),where('classId','==',classId))));
+  const qs=[getDocs(query(collection(db,'assignments'),where('studentUid','==',u.uid))),getDocs(query(collection(db,'assignments'),where('classId','==','all')))];if(classId&&classId!=='all')qs.push(getDocs(query(collection(db,'assignments'),where('classId','==',classId))));
   const [subs,fbs,...as]=await Promise.all([getDocs(query(collection(db,'submissions'),where('uid','==',u.uid))),getDocs(query(collection(db,'feedback'),where('uid','==',u.uid))),...qs]);
   const S=subs.docs.map(d=>({id:d.id,...d.data()})),F=Object.fromEntries(fbs.docs.map(d=>[d.id,d.data()]));
-  const A=as.flatMap(s=>s.docs.map(d=>({id:d.id,...d.data()}))).sort((x,y)=>x.due.toMillis()-y.due.toMillis());
+  const A=[...new Map(as.flatMap(s=>s.docs.map(d=>[d.id,{id:d.id,...d.data()}]))).values()].sort((x,y)=>x.due.toMillis()-y.due.toMillis());
   root.replaceChildren();
   // class
-  const cc=mk('div','card');if(classId){const c=await getDoc(doc(db,'classes',classId)).catch(()=>null);cc.append(mk('p',null,'Class: '+(c&&c.exists()?c.data().name:classId)));}
-  else{cc.append(mk('h3',null,'Join your class'),mk('p',null,'Enter the 6-character code from your tutor.'));const i=mk('input','ans-in');i.maxLength=6;i.placeholder='e.g. K7Q2MX';const b=mk('button','gold','Join');const m=mk('p');
+  const cc=mk('details','card');let cname='All students';if(classId&&classId!=='all'){const c=await getDoc(doc(db,'classes',classId)).catch(()=>null);cname=c&&c.exists()?c.data().name:classId;}
+  cc.append(mk('summary',null,`Class: ${cname} \u00b7 Have a code for another class?`));{const i=mk('input','ans-in');i.maxLength=6;i.placeholder='e.g. K7Q2MX';const b=mk('button','gold','Join');const m=mk('p');
     b.onclick=async()=>{const code=i.value.trim().toUpperCase();if(!/^[A-Z0-9]{6}$/.test(code)){m.textContent='Codes are 6 letters or numbers.';return;}
       try{const j=await getDoc(doc(db,'joinCodes',code));if(!j.exists())throw 0;await setDoc(doc(db,'members',u.uid),{classId:j.data().classId,code,joinedAt:serverTimestamp()});load();}catch(e){m.textContent='That code did not work. Check it with your tutor.';}};
-    cc.append(i,b,m);}
+    cc.append(mk('p',null,'Optional. Everyone is already in All students.'),i,b,m);}
   root.append(cc);
   // assignments
   root.append(mk('h2',null,'Homework'));if(!A.length)root.append(mk('p',null,'No homework yet.'));
