@@ -131,3 +131,5 @@ details{transition:border-color .2s}summary:hover{color:var(--navy2)}
 .progress i{transition:width .6s ease}
 img,audio,video{max-width:100%}
 @media(max-width:600px){body{font-size:17px}section.band{padding:52px 0}.hero2{padding:48px 0 60px}.card{padding:20px}.ctas .btn,.ctas button,.cta-band .btn,.cta-band button{width:100%}.toolbar{top:58px}table{font-size:.92rem}}
+.microcopy{margin:14px 0 0;font-weight:600;color:var(--gold2);letter-spacing:.02em}
+.fmt .t{font:700 1.5rem/1.2 "Playfair Display",Georgia,serif;color:var(--gold);margin:.2em 0}
