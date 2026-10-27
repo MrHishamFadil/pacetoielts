@@ -119,3 +119,15 @@ a.card.skill{text-decoration:none;color:var(--ink);transition:.2s}.card.skill .g
 .page-head{padding:52px 0;background:radial-gradient(600px 300px at 95% 0%,rgba(227,199,102,.22),transparent 60%),linear-gradient(140deg,#14203A,var(--navy2))}
 .page-head h1{font-size:clamp(2rem,4.5vw,3rem)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+/* site-wide polish */
+::selection{background:var(--gold2);color:var(--navy)}
+nav.main a{transition:background .15s,color .15s}
+.content h2{padding-top:.4rem;border-top:1px solid var(--line)}
+.content>.wrap{max-width:900px}
+.card{transition:transform .2s,box-shadow .2s}
+details{transition:border-color .2s}summary:hover{color:var(--navy2)}
+.toolbar,.qnav{box-shadow:0 6px 18px rgba(27,42,74,.06)}
+.ans-in{transition:border-color .15s,background .15s}
+.progress i{transition:width .6s ease}
+img,audio,video{max-width:100%}
+@media(max-width:600px){body{font-size:17px}section.band{padding:52px 0}.hero2{padding:48px 0 60px}.card{padding:20px}.ctas .btn,.ctas button,.cta-band .btn,.cta-band button{width:100%}.toolbar{top:58px}table{font-size:.92rem}}
