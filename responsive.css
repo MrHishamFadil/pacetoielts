@@ -1,0 +1,23 @@
+/* Responsive fixes: layout-only, no JS or ID changes */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+*,*::before,*::after{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
+@supports(overflow:clip){html,body{overflow-x:clip}}
+img,video,audio,iframe,canvas,svg,embed,object{max-width:100%}
+img,video{height:auto}
+audio{width:100%}
+pre,code{white-space:pre-wrap;word-break:break-word}
+p,li,td,th,h1,h2,h3,h4,a{overflow-wrap:anywhere}
+table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+input,select,textarea{max-width:100%;font-size:max(16px,1em)}
+h1{font-size:clamp(1.6rem,1.2rem + 2.2vw,2.8rem)}
+h2{font-size:clamp(1.3rem,1.05rem + 1.3vw,2rem)}
+body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);padding-bottom:env(safe-area-inset-bottom)}
+/* Desktop nav: wrap instead of pushing past the edge (tablets 860-1280) */
+@media(min-width:860px){nav.main{flex-wrap:wrap;justify-content:flex-end;min-width:0;max-width:100%}}
+@media(min-width:860px) and (max-width:1279px){nav.main a{padding:8px 7px;font-size:.9rem}}
+/* Simple-header pages (choose-plan, my-plan) */
+header{flex-wrap:wrap;gap:8px}
+header nav{display:flex;flex-wrap:wrap;gap:4px 0}
+@media(max-width:600px){header nav a{margin-left:0!important;margin-right:16px;padding:10px 0;display:inline-block}
+ .w{padding:0 14px}}
