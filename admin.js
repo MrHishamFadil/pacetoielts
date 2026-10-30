@@ -1,7 +1,7 @@
 // Tutor dashboard. Access is enforced by Firestore rules (2 tutor emails, verified). Everything is rendered as plain text.
 import { getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, collectionGroup, getDocs, doc, setDoc, addDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, collectionGroup, getDocs, getDoc, doc, setDoc, addDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const ADMINS=['hisham.abdelfadil2@gmail.com','hisham.abdelfadil@gmail.com'];
 const SEP='\u241F';const $=id=>document.getElementById(id);
 const mk=(t,x,c)=>{const e=document.createElement(t);if(x!=null)e.textContent=String(x);if(c)e.className=c;return e;};
@@ -19,9 +19,9 @@ function streak(uid){const days=new Set([...D.att.filter(a=>a.uid===uid).map(a=>
 function stats(uid){const at=D.att.filter(a=>a.uid===uid);const A=window.IYP_ANALYSE?window.IYP_ANALYSE(at):{sec:{},micro:{},weak:[],task:{}};
   const pc=k=>A.sec[k]?Math.round(100*A.sec[k][0]/A.sec[k][1])+'%':'\u2013';const u=D.users[uid]||{};const last=[u.lastSeen,...at.map(a=>a.date)].filter(Boolean).sort((x,y)=>y-x)[0];
   return {at,A,reading:pc('Reading'),listening:pc('Listening'),avg:at.length?Math.round(at.reduce((s,a)=>s+a.pct,0)/at.length):'',last,streak:streak(uid)};}
-const tabs=['Students','Classes','Assignments','Marking','Report'];
+const tabs=['Students','Classes','Assignments','Marking','Report','Controls'];
 function nav(){const n=$('tabs');n.replaceChildren();tabs.forEach(t=>n.append(btn(t,()=>show(t),'tab')));}
-function show(t){document.querySelectorAll('#tabs .tab').forEach(b=>b.classList.toggle('gold',b.textContent===t));const v=$('view');v.replaceChildren();({Students,Classes,Assignments,Marking,Report})[t](v);}
+function show(t){document.querySelectorAll('#tabs .tab').forEach(b=>b.classList.toggle('gold',b.textContent===t));const v=$('view');v.replaceChildren();({Students,Classes,Assignments,Marking,Report,Controls})[t](v);}
 function Students(v){const cf=mk('select');cf.append(new Option('All classes',''));Object.entries(D.classes).forEach(([id,c])=>cf.append(new Option(c.name,id)));
   const tb=mk('tbody');const draw=()=>{tb.replaceChildren();Object.keys(D.users).filter(uid=>!cf.value||(D.members[uid]||{}).classId===cf.value).map(uid=>[uid,stats(uid)]).sort((x,y)=>(y[1].last||0)-(x[1].last||0)).forEach(([uid,s])=>{const u=D.users[uid];
     const r=mk('tr');const nm=mk('td');nm.append(btn(u.displayName||'(no name)',()=>{sel=uid;show('Report');},'linkbtn'));
@@ -87,3 +87,18 @@ async function load(){db=getFirestore(getApp());const ts=x=>x&&x.toDate?x.toDate
 document.addEventListener('iyp-auth',()=>{const u=getAuth(getApp()).currentUser;
   if(!u||!u.emailVerified||!ADMINS.includes(u.email)){location.replace('index.html');return;}
   load().catch(()=>{$('adm').replaceChildren(mk('p','Access denied or failed to load.'));});},{once:true});
+
+// Controls tab (additive). Writes need the proposed rules for settings/site; class actions use existing isAdmin() rules.
+const SECTIONS=[['reading','Reading'],['listening','Listening'],['writing','Writing'],['speaking','Speaking'],['vocabulary','Vocabulary'],['lessons','Lessons'],['band-scores','Band scores'],['study-plan','Study plan'],['mocks','Mocks'],['diagnostic','Diagnostic'],['faq','FAQ'],['tips','Tips']];
+const newCode=()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return [...crypto.getRandomValues(new Uint8Array(6))].map(x=>A[x%A.length]).join('');};
+async function Controls(v){
+  const s=mk('div',null,'card');s.append(mk('h3','Show or hide site sections'),mk('p','Ticked = visible to students. Saved to settings/site.','disclaimer'));const m1=mk('p');
+  let hidden=[];try{const d=await getDoc(doc(db,'settings','site'));if(d.exists())hidden=d.data().hidden||[];}catch(e){m1.textContent='Could not read settings (rule not deployed yet?).';}
+  const box=mk('div',null,'labels');SECTIONS.forEach(([id,l])=>{const L=mk('label');const c=mk('input');c.type='checkbox';c.value=id;c.checked=!hidden.includes(id);L.append(c,' '+l);box.append(L);});
+  s.append(box,btn('Save visibility',async()=>{const h=[...box.querySelectorAll('input')].filter(c=>!c.checked).map(c=>c.value);try{await setDoc(doc(db,'settings','site'),{hidden:h,updatedAt:serverTimestamp()});m1.textContent='Saved.';}catch(e){m1.textContent='Could not save (needs the settings/site rule).';}},'gold'),m1);v.append(s);
+  Object.entries(D.classes).filter(([id])=>id!=='all').forEach(([id,c])=>{const k=mk('div',null,'card');const m=mk('p');
+    k.append(mk('h3',c.name),mk('p',`Join code: ${c.code}`),btn('Reset join code',async()=>{if(!confirm('Make a new join code? The old code stops working; current members stay.'))return;const code=newCode();
+      try{await setDoc(doc(db,'classes',id),{name:c.name,code,createdAt:c.createdAt||serverTimestamp()});await setDoc(doc(db,'joinCodes',code),{classId:id});if(c.code)await deleteDoc(doc(db,'joinCodes',c.code)).catch(()=>{});c.code=code;show('Controls');}catch(e){m.textContent='Could not reset the code.';}}));
+    const ul=mk('ul');Object.entries(D.members).filter(([,x])=>x.classId===id).forEach(([uid])=>{const u=D.users[uid]||{};const li=mk('li',(u.displayName||u.email||uid)+' ');
+      li.append(btn('Remove from class',async()=>{if(!confirm(`Remove ${u.displayName||'this student'} from ${c.name}? They go back to All students next time they sign in.`))return;try{await deleteDoc(doc(db,'members',uid));delete D.members[uid];show('Controls');}catch(e){m.textContent='Could not remove.';}}));ul.append(li);});
+    if(!ul.children.length)ul.append(mk('li','No students in this class.'));k.append(mk('h4','Students'),ul,m);v.append(k);});}
