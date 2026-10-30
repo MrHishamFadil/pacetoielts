@@ -66,11 +66,12 @@ async function loadContent(){
     document.dispatchEvent(new CustomEvent('iyp-content',{detail:page}));
   }catch(e){const g=document.getElementById('gate');if(g){g.replaceChildren(el('p',{},'Sorry, this page could not load. Please refresh, or sign in again.'));}}
 }
+function showSignin(){const g=document.getElementById('gate')||document.querySelector('main');if(!g)return;const w=el('div',{class:'signin-panel'});w.append(el('h2',{},'Sign in to continue'),el('p',{},'Free, takes 10 seconds. Use your Google account to open this page and save your progress.'));const b=el('button',{class:'btn gold','data-login':''});b.innerHTML=G+' Continue with Google';w.append(b);g.replaceChildren(w);bindLogin();}
 onAuthStateChanged(auth,u=>{
   if(u) touchProfile(u);
   renderBox(u);
   window.IYP_USER=u?{uid:u.uid,name:u.displayName,email:u.email}:null;
-  if(gated){ if(!u){location.replace('index.html?next='+encodeURIComponent(page));return;} loadContent(); }
+  if(gated){ if(!u){ if(['faq','band-scores','tips'].includes(page)){loadContent().then(()=>{if(document.querySelector('main[data-gated]'))showSignin();});} else showSignin(); } else loadContent(); }
   else if(u){ const n=safeNext(); if(n){location.replace(n);return;} document.querySelectorAll('[data-login]').forEach(b=>{if(b.closest('#authbox'))return;const a=el('a',{class:b.className||'btn gold',href:'reading.html'},'Start practising');b.replaceWith(a);}); const m=document.getElementById('gate-msg'); if(m)m.textContent='You are signed in. Pick a skill below to start.'; }
   else { const m=document.getElementById('gate-msg'); if(m&&safeNext())m.textContent='Please continue with Google to open that page.'; }
   document.dispatchEvent(new CustomEvent('iyp-auth',{detail:window.IYP_USER}));

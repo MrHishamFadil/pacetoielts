@@ -33,3 +33,9 @@ header .bar .logo{white-space:nowrap}
  header:not(.top) .bar nav::-webkit-scrollbar{display:none}
  header:not(.top) .bar nav a{margin:0!important;padding:10px 0;white-space:nowrap}
 }
+.signin-panel{max-width:480px;margin:40px auto;padding:28px 22px;background:#fff;border-radius:18px;box-shadow:0 6px 24px #0002;text-align:center}
+.signin-panel svg{width:20px;height:20px}
+/* Home sign-in button: compact */
+header:not(.top) #authbox{flex:none}
+header:not(.top) #authbox button{padding:8px 14px;font-size:.9rem;line-height:1.1;display:inline-flex;align-items:center;gap:6px}
+header:not(.top) #authbox img{width:28px;height:28px}
