@@ -23,6 +23,7 @@ const gated=document.querySelector('main[data-gated]')!==null;
 function safeNext(){const n=new URLSearchParams(location.search).get('next');return (n&&/^[a-z0-9-]{1,40}$/.test(n)&&n!=='admin'&&n!=='index')?n+'.html':null;}
 async function login(){ try{ await signInWithPopup(auth,provider);}catch(e){ if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){await signInWithRedirect(auth,provider);} else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){alert('Sign-in failed. Please try again.');} } }
 window.iypLogin=login;
+window.PTI_LOAD_LESSON=async(id)=>{const s=await getDoc(doc(db,'tutorLessons',id));return s.exists()?s.data():null;};
 function el(tag,attrs,text){const e=document.createElement(tag);for(const k in attrs||{})e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;return e;}
 function bindLogin(){document.querySelectorAll('[data-login]').forEach(b=>{if(!b.dataset.bound){b.dataset.bound='1';b.addEventListener('click',login);}});}
 function renderBox(u){
