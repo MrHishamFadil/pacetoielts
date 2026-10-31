@@ -51,3 +51,6 @@ nav.main .more:hover .more-menu,nav.main .more:focus-within .more-menu{display:f
 /* Homepage header: one compact row below 1280px; skill links are in the page cards */
 @media(max-width:1279px){header:not(.top) .bar{flex-wrap:nowrap;min-height:56px}header:not(.top) .bar nav{order:2;width:auto;flex-wrap:nowrap;overflow:visible;margin-left:auto;padding-bottom:0}header:not(.top) .bar nav a.hide-m,header:not(.top) .bar nav a[href="choose-plan.html"]{display:none}header:not(.top) .bar #authbox{order:3;margin-left:12px}header:not(.top) #authbox .nm{display:none}}
 @media(max-width:479px){header:not(.top) .bar nav a[href="dashboard.html"]{display:none}header:not(.top) #authbox img{display:none}header:not(.top) #authbox button[data-login]{font-size:0}header:not(.top) #authbox button[data-login]::after{content:"Sign in";font-size:14px}}
+.speed{display:flex;align-items:center;gap:8px;margin:6px 0 12px;flex-wrap:wrap}.speed-l{font-weight:600;font-size:.95rem}
+.speed-b{min-height:44px;min-width:64px;padding:8px 14px;border-radius:99px;border:2px solid var(--navy,#1B2A4A);background:#fff;color:var(--navy,#1B2A4A);font-weight:700;cursor:pointer}
+.speed-b[aria-pressed="true"]{background:var(--navy,#1B2A4A);color:#fff}

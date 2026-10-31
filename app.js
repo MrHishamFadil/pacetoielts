@@ -82,7 +82,16 @@ document.querySelectorAll('.quiz').forEach(q=>{
   tmb.onclick=()=>{if(iv)clearInterval(iv);let s=mins*60;const t=()=>{tm.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');if(s--<=0){clearInterval(iv);iv=null;tm.textContent="Time's up";}};t();iv=setInterval(t,1000);};
   rs.onclick=()=>{t0=Date.now();q.querySelectorAll('.qfb').forEach(x=>x.remove());q.querySelectorAll('.ans-in').forEach(i=>{i.value='';i.className='ans-in';i.nextSibling.textContent='';});sc.textContent=`Score: \u2013/${qs.length}`;if(iv)clearInterval(iv);iv=null;tm.textContent='';};
 });
-quicknav();dash();results();mistakes();if(location.hash){const t=document.getElementById(location.hash.slice(1));if(t)t.scrollIntoView();}};
+speedCtl();quicknav();dash();results();mistakes();if(location.hash){const t=document.getElementById(location.hash.slice(1));if(t)t.scrollIntoView();}};
+function speedCtl(){const K='pti_speed';let r=parseFloat(localStorage.getItem(K))||1;
+  document.querySelectorAll('main audio').forEach(au=>{if(/speaking-model/.test(au.getAttribute('src')||'')||au.dataset.spd)return;au.dataset.spd=1;
+    au.preservesPitch=true;au.mozPreservesPitch=true;au.webkitPreservesPitch=true;
+    const box=mk('div','speed');box.setAttribute('role','group');box.setAttribute('aria-label','Playback speed');box.append(mk('span','speed-l','Speed:'));
+    const set=v=>{r=v;try{localStorage.setItem(K,String(v));}catch(e){}document.querySelectorAll('main audio[data-spd]').forEach(x=>{x.defaultPlaybackRate=v;x.playbackRate=v;});
+      document.querySelectorAll('.speed button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.v===v)));};
+    [1,0.85].forEach(v=>{const b=mk('button','speed-b',v===1?'1.0x':'0.85x');b.type='button';b.dataset.v=v;b.onclick=()=>set(v);box.append(b);});
+    au.after(box);au.addEventListener('play',()=>{au.playbackRate=r;});});
+  set0();function set0(){document.querySelectorAll('main audio[data-spd]').forEach(x=>{x.defaultPlaybackRate=r;x.playbackRate=r;});document.querySelectorAll('.speed button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.v===r)));}}
 function quicknav(){const main=document.querySelector('main');const hs=[...main.querySelectorAll('section.quiz[id], h2[id]')];if(hs.length<3||main.querySelector('.qnav'))return;
   const n=mk('nav','qnav');n.setAttribute('aria-label','On this page');hs.forEach(h=>{const t=h.tagName==='H2'?h.textContent:(h.querySelector('h2')||h).textContent;n.append(link('#'+h.id,t.slice(0,40)));});
   const c=main.querySelector('.content');if(c)c.prepend(n);}
