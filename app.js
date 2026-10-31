@@ -28,7 +28,9 @@ function canon0(x){let s=String(x).toLowerCase().replace(/&[a-z]+;/g,'').replace
   if(s in NUMW)return String(NUMW[s]);
   if(m=s.match(/^(twenty|thirty|forty|fifty)[- ]?(one|two|three|four|five|six|seven|eight|nine)$/))return String(NUMW[m[1]]+NUMW[m[2]]);
   return s.replace(/\s+/g,'');}
-window.IYP_MATCH=function(given,answer){const v=norm(given);if(!v)return false;const k=keys(answer);const cv=canon(given);
+const TYPES=[['number','numbers','price','amount','cost','figure','money','sum','digit','digits','numeral','quantity'],['plural noun','plural nouns','plural','noun','nouns','plural noun form'],['noun','nouns','singular noun','plural noun','thing','object'],['adjective','adj','adjectives','describing word'],['verb','verbs','action'],['adverb','adverbs'],['date','day','dates'],['time','times','hour','clock time'],['name','names','proper noun','person'],['place','location','places']];
+function typeOk(v,k){const t=k.map(x=>x.toLowerCase().trim());return TYPES.some(g=>t.some(x=>x===g[0])&&g.includes(v.toLowerCase().trim()));}
+window.IYP_MATCH=function(given,answer){const v=norm(given);if(!v)return false;const k=keys(answer);const cv=canon(given);if(typeOk(v,k))return true;
   return k.some(x=>x===v||x.replace(/\s+/g,'')===v.replace(/\s+/g,'')||(x.length>2&&v.replace(/^the /,'')===x.replace(/^the /,'')))||answer.split(/:\s/)[0].split('/').some(o=>[o,o.replace(/\(.*?\)/g,'')].some(r=>canon(r)===cv));};
 function lev(a,b){const m=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=m[0];m[0]=i;for(let j=1;j<=b.length;j++){const t=m[j];m[j]=Math.min(m[j]+1,m[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t;}}return m[b.length];}
 function tagFor(q,li,ans,i){
@@ -67,7 +69,8 @@ document.querySelectorAll('.quiz').forEach(q=>{
   bar.append(chk,sc,tmb,tm,rs);q.insertBefore(bar,q.children[1]);
   let t0=Date.now(),iv=null;const sid=location.pathname.split('/').pop().replace('.html','')+'_'+q.id;
   chk.onclick=()=>{let n=0;const given=[],right=[];q.querySelectorAll('.qfb').forEach(x=>x.remove());
-    q.querySelectorAll('.ans-in').forEach((inp,i)=>{const ok=window.IYP_MATCH(inp.value,as[i].textContent);
+    const ins=[...q.querySelectorAll('.ans-in')];if(!ins.some(x=>x.value.trim())){sc.textContent='Type at least one answer first.';return;}
+    ins.forEach((inp,i)=>{if(!inp.value.trim()){inp.className='ans-in';inp.nextSibling.className='fb';inp.nextSibling.textContent='';given.push('');right.push('0');return;}const ok=window.IYP_MATCH(inp.value,as[i].textContent);
       inp.classList.toggle('ok',ok);inp.classList.toggle('bad',!ok);const fb=inp.nextSibling;fb.className='fb '+(ok?'ok':'bad');fb.textContent=ok?'\u2713 Correct':'\u2717 Answer: '+as[i].textContent.split(/:\s/)[0];
       if(ok)n++;else{const cz=tags[i].startsWith('L-')?cause(inp.value,as[i].textContent,tags[i],tr):'';feedback(qs[i],qtext[i],as[i].textContent,tags[i],cz);
         window.IYP_MISTAKE&&window.IYP_MISTAKE({section:sid,q:i+1,tag:tags[i],cause:cz,given:inp.value.slice(0,80),correct:as[i].textContent.split(/:\s/)[0].slice(0,120)}).catch(()=>{});}
