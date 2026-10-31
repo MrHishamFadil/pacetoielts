@@ -135,3 +135,11 @@ document.addEventListener('iyp-content',function(){
   document.querySelectorAll('main a[href="/free-practice/"]').forEach(function(a){a.setAttribute('href','index.html#practice');});
   document.querySelectorAll('main p').forEach(function(p){var t=p.firstChild;if(t&&t.nodeType===3&&t.textContent.indexOf('No. Everything is free without an account.')===0){t.textContent='Practice is free, but most pages ask you to sign in so your progress is saved. Click ';}});
 });
+// Practice tests: stand-alone countdown timers for papers, Writing tasks and Speaking parts (.ptimer[data-min]).
+document.addEventListener('iyp-content',function(){
+  document.querySelectorAll('main .ptimer[data-min]').forEach(function(p){if(p.dataset.ready)return;p.dataset.ready=1;
+    var m=+p.dataset.min||1,lab=p.dataset.label||'',b=document.createElement('button'),o=document.createElement('span'),iv=null;
+    b.type='button';b.className='tm';b.textContent='Start '+m+':00 timer'+(lab?' ('+lab+')':'');o.className='timer';o.setAttribute('aria-live','polite');
+    b.onclick=function(){if(iv)clearInterval(iv);var s=m*60;var t=function(){o.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');if(s--<=0){clearInterval(iv);iv=null;o.textContent="Time's up";}};t();iv=setInterval(t,1000);};
+    p.append(b,' ',o);});
+});
