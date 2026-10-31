@@ -63,18 +63,18 @@ document.querySelectorAll('.quiz').forEach(q=>{
   if(!qs.length||qs.length!==as.length) return;
   const qtext=qs.map(li=>li.textContent);const tags=qs.map((li,i)=>tagFor(q,li,as[i].textContent,i));
   const tr=(q.querySelector('.transcript')||q.querySelector('details:not(.answers)')||{textContent:''}).textContent.toLowerCase();
-  qs.forEach((li,i)=>{const inp=mk('input','ans-in');inp.placeholder='Your answer';inp.setAttribute('aria-label','Answer '+(i+1));inp.dataset.k=JSON.stringify(keys(as[i].textContent));li.append(inp);li.append(mk('span','fb'));});
+  qs.forEach((li,i)=>{const inp=mk('input','ans-in');inp.placeholder='Your answer';inp.setAttribute('aria-label','Answer '+(i+1));inp.dataset.k=JSON.stringify(keys(as[i].textContent));inp.dataset.i=i;li.append(inp);li.append(mk('span','fb'));});
   const bar=mk('div','toolbar');const mins=+q.dataset.min||20;
   const chk=mk('button','gold chk','Check answers'),sc=mk('span','score',`Score: \u2013/${qs.length}`),tmb=mk('button','tm',`Start ${mins}:00 timer`),tm=mk('span','timer'),rs=mk('button','rs','Reset');
-  bar.append(chk,sc,tmb,tm,rs);q.insertBefore(bar,q.children[1]);
+  bar.append(chk,sc,tmb,tm,rs);if(q.dataset.shuffle!==undefined){const sh=mk('button','rs','Shuffle and try again');bar.append(sh);sh.onclick=()=>{rs.onclick();const ord=qs.map((_,k)=>k).sort(()=>Math.random()-.5);const qp=qs[0].parentNode,ap=as[0].parentNode;ord.forEach(k=>{qp.append(qs[k]);ap.append(as[k]);});};}q.insertBefore(bar,q.children[1]);
   let t0=Date.now(),iv=null;const sid=location.pathname.split('/').pop().replace('.html','')+'_'+q.id;
   chk.onclick=()=>{let n=0;const given=[],right=[];q.querySelectorAll('.qfb').forEach(x=>x.remove());
     const ins=[...q.querySelectorAll('.ans-in')];if(!ins.some(x=>x.value.trim())){sc.textContent='Type at least one answer first.';return;}
-    ins.forEach((inp,i)=>{if(!inp.value.trim()){inp.className='ans-in';inp.nextSibling.className='fb';inp.nextSibling.textContent='';given.push('');right.push('0');return;}const ok=window.IYP_MATCH(inp.value,as[i].textContent);
+    ins.forEach((inp,_k)=>{const i=+inp.dataset.i;if(!inp.value.trim()){inp.className='ans-in';inp.nextSibling.className='fb';inp.nextSibling.textContent='';given[i]='';right[i]='0';return;}const ok=window.IYP_MATCH(inp.value,as[i].textContent);
       inp.classList.toggle('ok',ok);inp.classList.toggle('bad',!ok);const fb=inp.nextSibling;fb.className='fb '+(ok?'ok':'bad');fb.textContent=ok?'\u2713 Correct':'\u2717 Answer: '+as[i].textContent.split(/:\s/)[0];
       if(ok)n++;else{const cz=tags[i].startsWith('L-')?cause(inp.value,as[i].textContent,tags[i],tr):'';feedback(qs[i],qtext[i],as[i].textContent,tags[i],cz);
         window.IYP_MISTAKE&&window.IYP_MISTAKE({section:sid,q:i+1,tag:tags[i],cause:cz,given:inp.value.slice(0,80),correct:as[i].textContent.split(/:\s/)[0].slice(0,120)}).catch(()=>{});}
-      given.push(inp.value.slice(0,80));right.push(ok?'1':'0');});
+      given[i]=inp.value.slice(0,80);right[i]=ok?'1':'0';});
     sc.textContent=`Score: ${n}/${qs.length}`;
     window.IYP_SAVE&&window.IYP_SAVE(sid,n,qs.length,q.querySelector('h2').textContent).catch(()=>{});
     window.IYP_ATTEMPT&&window.IYP_ATTEMPT({section:sid,score:n,max:qs.length,timeSec:Math.round((Date.now()-t0)/1000),given,correct:as.map(a=>a.textContent.split(/:\s/)[0].trim().slice(0,80)),results:right.join(''),tags:tags.join(',')}).catch(()=>{});
