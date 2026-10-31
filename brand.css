@@ -1,0 +1,29 @@
+/* Brand layer: Pace to IELTS colours + type. Loaded last; visual only. */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;600;700&display=swap");
+:root{--navy:#1B3A5C;--navy2:#24507D;--gold:#FFB020;--gold2:#FFC555;--teal:#0FA3A6;--teal2:#0B8285}
+body{font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,h3,.logo{font-family:"Poppins","Inter",system-ui,sans-serif!important;letter-spacing:-.01em}
+/* accents on light backgrounds use teal (amber is too pale on ivory) */
+header.top .logo span,.kicker{color:var(--teal2)}
+a{text-decoration-color:var(--teal)}
+summary::before{color:var(--teal)}details[open]{border-color:var(--teal)}
+.card.skill{border-top-color:var(--teal)}
+.hero{background:radial-gradient(circle at 85% 10%,rgba(15,163,166,.35),transparent 45%),linear-gradient(135deg,var(--navy),#10263F)}
+.page-head{background:radial-gradient(circle at 90% 0,rgba(15,163,166,.3),transparent 45%),linear-gradient(135deg,var(--navy),var(--navy2))}
+.btn.gold,button.gold,.btn.g{color:#10263F}
+/* content wrapper lost its side padding (.content overrode .wrap) */
+.wrap.content{padding:24px 18px 48px}
+.content h2{margin-top:2rem;padding-top:1.2rem;border-top:1px solid var(--line,#e6dfcc)}
+.content h2:first-child{border-top:0;padding-top:0}
+/* readable sizes + comfortable tap targets */
+.kick,.tag,.crumb,.pill,small,.disc{font-size:max(14px,.875rem)}
+.gbtn,#authbox button{font-size:15px;min-height:44px}
+nav.main a{min-height:44px;display:flex;align-items:center}
+.logo{display:inline-block;line-height:44px}
+footer a{display:inline-block;padding:10px 2px}
+.menu-btn{min-height:44px;align-items:center}
+.tutor .tag,.hero .kick{font-size:14px}
+button,.btn{font-size:1rem}
+.gbtn,#authbox button{font-size:15px}
+.st b,.sp b{font-family:"Poppins","Inter",sans-serif}.sp b{color:var(--teal2)}
+.logo{word-spacing:.18em;letter-spacing:0}

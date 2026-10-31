@@ -118,3 +118,8 @@ async function mistakes(){const el=document.getElementById('mistakes');if(!el||!
     r.append(mk('td',null,x.date?x.date.toLocaleDateString('en-GB'):''),mk('td',null,x.section),mk('td',null,x.q),mk('td',null,x.tag),mk('td',null,x.given||'(blank)'),mk('td',null,x.correct),mk('td',null,x.cause||'\u2013'),lt,d);t.append(r);});
   const wrap=mk('div','tablewrap');wrap.append(t);el.append(wrap);}
 })();
+// Fix stale links/text inside public Firestore content (faq/tips/band-scores) without touching auth.
+document.addEventListener('iyp-content',function(){
+  document.querySelectorAll('main a[href="/free-practice/"]').forEach(function(a){a.setAttribute('href','index.html#practice');});
+  document.querySelectorAll('main p').forEach(function(p){var t=p.firstChild;if(t&&t.nodeType===3&&t.textContent.indexOf('No. Everything is free without an account.')===0){t.textContent='Practice is free, but most pages ask you to sign in so your progress is saved. Click ';}});
+});
