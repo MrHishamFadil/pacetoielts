@@ -35,3 +35,13 @@ header:not(.top) .bar{height:auto;min-height:64px}
  header:not(.top) .bar nav{order:3;width:100%;display:flex;flex-wrap:wrap;gap:0 22px;padding-bottom:4px}
  header:not(.top) .bar nav a{margin:0!important;padding:10px 0}
 }
+/* Nav: "More" group */
+nav.main .more{position:relative}
+nav.main .more-btn{display:flex;align-items:center;min-height:44px;padding:8px 10px;border-radius:10px;font-weight:600;color:var(--navy);cursor:pointer;white-space:nowrap}
+nav.main .more.cur .more-btn,nav.main .more-btn:hover{background:var(--navy);color:var(--ivory)}
+nav.main .more-menu{display:none;position:absolute;right:0;top:100%;z-index:30;min-width:180px;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 10px 30px rgba(27,42,74,.12)}
+nav.main .more:hover .more-menu,nav.main .more:focus-within .more-menu{display:flex}
+@media(min-width:860px){nav.main{flex-wrap:nowrap}nav.main a,nav.main .more-btn{padding:8px 7px;font-size:.88rem;white-space:nowrap}}
+@media(max-width:859px){nav.main .more-btn{display:none}nav.main .more-menu{display:flex;position:static;border:0;box-shadow:none;padding:0;background:none;min-width:0}}
+@media(min-width:1000px) and (max-width:1279px){header.top .bar{flex-wrap:wrap}header.top #authbox{order:2;margin-left:auto}header.top nav.main{order:3;width:100%;justify-content:flex-start;padding-bottom:4px}}
+@media(min-width:1280px){header.top .bar{flex-wrap:nowrap}header.top nav.main{flex:1 1 auto;justify-content:flex-end}header.top #authbox .nm{display:none}}
