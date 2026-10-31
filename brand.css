@@ -54,3 +54,5 @@ nav.main .more:hover .more-menu,nav.main .more:focus-within .more-menu{display:f
 .speed{display:flex;align-items:center;gap:8px;margin:6px 0 12px;flex-wrap:wrap}.speed-l{font-weight:600;font-size:.95rem}
 .speed-b{min-height:44px;min-width:64px;padding:8px 14px;border-radius:99px;border:2px solid var(--navy,#1B2A4A);background:#fff;color:var(--navy,#1B2A4A);font-weight:700;cursor:pointer}
 .speed-b[aria-pressed="true"]{background:var(--navy,#1B2A4A);color:#fff}
+/* Fix: in the collapsed menu (600-1279px) hover/focus must not turn the inline "More" links into a dropdown; that resize under the pointer caused a flicker loop. */
+@media(min-width:600px) and (max-width:1279px){header.top nav.main .more:hover .more-menu,header.top nav.main .more:focus-within .more-menu{display:contents}}
