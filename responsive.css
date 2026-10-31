@@ -39,3 +39,4 @@ header .bar .logo{white-space:nowrap}
 header:not(.top) #authbox{flex:none}
 header:not(.top) #authbox button{padding:8px 14px;font-size:.9rem;line-height:1.1;display:inline-flex;align-items:center;gap:6px}
 header:not(.top) #authbox img{width:28px;height:28px}
+@media(max-width:479px){html body header:not(.top) .bar{flex-wrap:wrap;height:auto;row-gap:2px}html body header:not(.top) .bar .logo{margin-right:16px}html body header:not(.top) .bar #authbox{order:2;margin-left:auto}html body header:not(.top) .bar>nav{order:3;flex:0 0 100%;width:100%;margin:0;padding-top:6px;border-top:1px solid rgba(255,255,255,.12)}}
