@@ -1,0 +1,93 @@
+<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pace to IELTS — Desert Dusk Redesign Preview</title><meta name="robots" content="noindex,nofollow"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"><style>
+:root{--ink:#1F2A33;--teal-deep:#0E4F5C;--teal:#177E8C;--terracotta:#C4552F;--terracotta-soft:#E8A87C;--sand:#F6EFE3;--sand-deep:#EDE2CE;--cream:#FDFBF6;--line:#E3D8C4;--ok:#1E7A4C;--bad:#B23A3A;--r:16px;--shadow:0 6px 24px rgba(31,42,51,.07)}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:120px}
+body{margin:0;background:var(--sand);color:var(--ink);font:17px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;color:var(--teal-deep);line-height:1.15;margin:0 0 .4em}
+h1{font-size:clamp(2rem,5vw,3.2rem)}h2{font-size:clamp(1.5rem,3vw,2.1rem);margin-top:2.2rem}h3{font-size:1.15rem}
+a{color:var(--teal);text-underline-offset:3px}
+.wrap{max-width:1140px;margin:0 auto;padding:0 20px}
+:focus-visible{outline:3px solid var(--terracotta);outline-offset:3px}
+header{position:sticky;top:0;z-index:20;background:rgba(253,251,246,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:12px;min-height:64px;flex-wrap:wrap}
+.logo{font-family:Fraunces,serif;font-weight:700;font-size:1.3rem;color:var(--teal-deep);text-decoration:none;margin-right:auto;display:flex;align-items:center;gap:8px}
+.logo svg{flex:none}
+.menu-toggle{display:none}.menu-btn{display:inline-flex;cursor:pointer;padding:10px 16px;border:2px solid var(--teal-deep);border-radius:12px;font-weight:700;color:var(--teal-deep);min-height:44px;align-items:center}
+nav.main{display:none;width:100%;flex-direction:column;padding-bottom:10px}
+.menu-toggle:checked~nav.main{display:flex}
+nav.main a{padding:12px 14px;border-radius:10px;text-decoration:none;font-weight:600;color:var(--teal-deep);min-height:44px;display:flex;align-items:center}
+nav.main a.cur,nav.main a:hover{background:var(--teal-deep);color:var(--cream)}
+#authbox{display:flex;align-items:center;gap:8px}
+.btn,button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 22px;border-radius:999px;border:2px solid var(--teal-deep);background:#fff;color:var(--teal-deep);font:600 1rem Inter,sans-serif;text-decoration:none;cursor:pointer;transition:.15s}
+.btn:hover,button:hover{background:var(--teal-deep);color:var(--cream)}
+.btn.primary{background:var(--terracotta);border-color:var(--terracotta);color:#fff}
+.btn.primary:hover{background:#A8451F;border-color:#A8451F}
+.btn.quiet{background:transparent;border-color:var(--teal);color:var(--teal)}
+.btn.quiet:hover{background:var(--teal);color:#fff}
+@media(min-width:1000px){.menu-btn{display:none}nav.main{display:flex!important;flex-direction:row;width:auto;padding:0;order:2;flex-wrap:wrap}.logo{margin-right:0}#authbox{order:3;margin-left:auto}nav.main a{font-size:.95rem;padding:8px 12px}}
+.hero{background:linear-gradient(160deg,var(--teal-deep) 0,#0A3A45 100%);color:var(--cream);padding:72px 0 88px;position:relative;overflow:hidden}
+.hero .sun{position:absolute;right:-80px;top:-80px;opacity:.18}
+.hero h1{color:var(--cream)}.hero h1 em{color:var(--terracotta-soft);font-style:normal}
+.hero .lead{font-size:1.15rem;max-width:600px;opacity:.95}
+.ctas{display:flex;gap:14px;flex-wrap:wrap;margin-top:26px}
+.trust{display:flex;gap:18px;flex-wrap:wrap;margin-top:24px;font-size:.92rem;opacity:.9;list-style:none;padding:0}.trust li:before{content:"\2713  ";color:var(--terracotta-soft)}
+.badge{display:inline-block;background:var(--terracotta);color:#fff;font-weight:700;font-size:.8rem;padding:4px 12px;border-radius:999px}
+section{padding:64px 0}.alt{background:var(--sand-deep)}
+.sh{max-width:640px;margin:0 auto 36px;text-align:center}.sh p{color:var(--ink);opacity:.85}
+.grid{display:grid;gap:18px;grid-template-columns:1fr}
+@media(min-width:680px){.grid.g2{grid-template-columns:1fr 1fr}.grid.g3{grid-template-columns:1fr 1fr}}
+@media(min-width:1000px){.grid.g3{grid-template-columns:repeat(3,1fr)}.grid.g4{grid-template-columns:repeat(4,1fr)}}
+.card{background:var(--cream);border:1px solid var(--line);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)}
+.card h3{margin-top:0}.card p{margin:.3em 0 1em;font-size:.95rem}
+.step b{display:inline-flex;width:44px;height:44px;border-radius:50%;background:var(--terracotta);color:#fff;align-items:center;justify-content:center;font-size:1.2rem;font-family:Fraunces,serif}
+.dial-wrap{text-align:center}.dial{max-width:220px;margin:0 auto}
+.player{background:var(--cream);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.player .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.player audio{width:100%;margin:12px 0}
+.gate{background:var(--cream);border:1px dashed var(--terracotta);border-radius:var(--r);padding:32px;text-align:center;max-width:480px;margin:32px auto}
+.note{font-size:.9rem;color:var(--ink);opacity:.75}
+footer{background:var(--teal-deep);color:#CFE3E8;padding:40px 0;font-size:.92rem}footer a{color:var(--terracotta-soft)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media(max-width:600px){section{padding:48px 0}.ctas .btn{width:100%}}
+</style></head><body>
+<header><div class="wrap bar"><a class="logo" href="#top"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="18" r="8" fill="#C4552F"/><rect x="2" y="18" width="24" height="2" rx="1" fill="#0E4F5C"/></svg>Pace <span style="color:var(--terracotta)">to IELTS</span></a>
+<input type="checkbox" id="mt" class="menu-toggle"><label for="mt" class="menu-btn">Menu</label>
+<div id="authbox"><button class="btn" style="min-height:44px">Sign in</button></div>
+<nav class="main"><a href="#diagnostic" class="cur">Diagnostic</a><a href="#practice">Practice</a><a href="#lessons">Lessons</a><a href="#progress">My progress</a><a href="#more">More ▾</a></nav></div></header>
+<main id="top">
+<div class="hero"><svg class="sun" width="400" height="400" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="200" r="150" fill="#E8A87C"/><circle cx="200" cy="200" r="100" fill="#C4552F"/></svg><div class="wrap">
+<span class="badge">Desert dusk · redesign preview</span>
+<h1>Know your band.<br><em>Then raise it.</em></h1>
+<p class="lead">Start with a free Reading and Listening diagnostic, then practise the skills you need to improve — with a real teacher behind every plan.</p>
+<div class="ctas"><a class="btn primary" href="#diagnostic">Take the free diagnostic</a><a class="btn quiet" href="#practice">Browse practice</a></div>
+<ul class="trust"><li>Free to start</li><li>Sign in with Google</li><li>Reading &amp; Listening marked automatically</li></ul>
+</div></div>
+<section id="diagnostic" class="alt"><div class="wrap"><div class="sh"><h2>How it works</h2><p>Three clear steps. No guesswork about where to start.</p></div>
+<div class="grid g3">
+<div class="card step"><b>1</b><h3>Take the diagnostic</h3><p>A short Reading and Listening check (about 30 minutes) shows your starting level in each skill.</p></div>
+<div class="card step"><b>2</b><h3>See your weak spots</h3><p>Your result gives a practice estimate for Reading and Listening, and points you to what to work on next.</p></div>
+<div class="card step"><b>3</b><h3>Practise and track</h3><p>Follow recommended practice, save your progress, and come back to a dashboard that shows what is done and what is next.</p></div>
+</div></div></section>
+<section id="practice"><div class="wrap"><div class="sh"><h2>Practise every skill</h2><p>Original IELTS Academic-style material, built for short, focused study sessions.</p></div>
+<div class="grid g4">
+<div class="card"><h3>Reading</h3><p>Timed passages with True/False/Not Given, headings and completion questions.</p><span class="badge" style="background:var(--teal)">99 questions</span></div>
+<div class="card"><h3>Listening</h3><p>British recordings across all four parts, with adjustable speed for practice.</p><span class="badge" style="background:var(--teal)">6 recordings</span></div>
+<div class="card"><h3>Writing</h3><p>Task 1 and Task 2 prompts. Tutor feedback coming soon.</p><span class="badge" style="background:var(--sand-deep);color:var(--ink)">21 tasks</span></div>
+<div class="card"><h3>Speaking</h3><p>Parts 1–3 with cue cards. Record your answer for review.</p><span class="badge" style="background:var(--sand-deep);color:var(--ink)">75 questions</span></div>
+</div>
+<div class="grid g3" style="margin-top:18px">
+<div class="card"><h3>Lessons</h3><p>Short, focused lessons on the skills that cost you marks.</p></div>
+<div class="card"><h3>Vocabulary</h3><p>Topic-based vocabulary for Reading, Listening, Writing and Speaking.</p></div>
+<div class="card"><h3>Mocks &amp; Homework</h3><p>Full practice tests and submitted work, all in one place.</p></div>
+</div></div></section>
+<section class="alt"><div class="wrap"><div class="sh"><h2>Your result, clearly explained</h2><p>The diagnostic gives a practice estimate for Reading and Listening — not an official IELTS result.</p></div>
+<div class="grid g2">
+<div class="card dial-wrap"><h3>Example only</h3><svg class="dial" viewBox="0 0 200 120" aria-label="Example practice estimate: Reading 6.5, Listening 7.0"><path d="M20 110 A80 80 0 0 1 180 110" fill="none" stroke="#EDE2CE" stroke-width="14" stroke-linecap="round"/><path d="M20 110 A80 80 0 0 1 150 45" fill="none" stroke="#177E8C" stroke-width="14" stroke-linecap="round"/><text x="100" y="95" text-anchor="middle" font-size="28" font-weight="700" fill="#0E4F5C" font-family="Fraunces,serif">6.5</text><text x="100" y="112" text-anchor="middle" font-size="11" fill="#5B6070">Reading · practice estimate</text></svg><p class="note">Listening: 7.0 practice estimate</p></div>
+<div class="card"><h3>What happens next</h3><p>Your result highlights the question types and skills that cost you marks, then recommends the next practice to try.</p><p class="note">Writing and Speaking bands are not part of this diagnostic. Tutor feedback is coming soon.</p><a class="btn primary" href="#top">Start the diagnostic</a></div>
+</div></div></section>
+<section><div class="wrap"><div class="sh"><h2>Listening, designed for focus</h2><p>Clear controls, no distractions.</p></div>
+<div class="player"><div class="row"><button class="btn primary" style="min-width:110px">▶ Play</button><button class="btn quiet">⏸ Pause</button><button class="btn quiet">0.85×</button><button class="btn quiet">1.0×</button><span style="margin-left:auto;font-weight:700;color:var(--teal-deep)">Remaining: 6:32</span></div><audio controls aria-label="Listening recording preview"></audio><p class="note">Transcript stays hidden until you finish answering.</p></div></div></section>
+<section class="alt"><div class="wrap"><div class="sh"><h2>Sign in to continue</h2><p>A friendly gate, never a silent redirect.</p></div>
+<div class="gate"><h3>Sign in to save your progress</h3><p>Sign in free with Google so your answers, scores and recommended practice are saved to your dashboard.</p><button class="btn primary">Continue with Google</button><p class="note">You can still read the FAQ, Tips and How marking works without signing in.</p></div></div></section>
+</main>
+<footer><div class="wrap"><p><strong>Pace to IELTS</strong> · Independent practice site, not affiliated with IELTS. IELTS is a registered trademark of its owners. All practice material is original. No score is guaranteed.</p><p><a href="#top">Back to top</a></p><p class="note" style="color:#9FBFC7">Desert dusk redesign preview — not live, not deployed. Waiting for approval.</p></div></footer>
+</body></html>
