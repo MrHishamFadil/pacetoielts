@@ -56,3 +56,9 @@ nav.main .more:hover .more-menu,nav.main .more:focus-within .more-menu{display:f
 .speed-b[aria-pressed="true"]{background:var(--navy,#1B2A4A);color:#fff}
 /* Fix: in the collapsed menu (600-1279px) hover/focus must not turn the inline "More" links into a dropdown; that resize under the pointer caused a flicker loop. */
 @media(min-width:600px) and (max-width:1279px){header.top nav.main .more:hover .more-menu,header.top nav.main .more:focus-within .more-menu{display:contents}}
+/* Header safety: 1280-1439px — full nav + auth button can collide with the logo; nav gets its own wrapped row. */
+@media(min-width:1280px) and (max-width:1439px){
+header.top .bar{flex-wrap:wrap;row-gap:4px}
+header.top nav.main{order:4;flex:1 1 100%;justify-content:flex-start;flex-wrap:wrap;padding-bottom:6px}
+header.top #authbox{order:3;margin-left:auto}
+}
