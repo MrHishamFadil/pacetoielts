@@ -10,5 +10,5 @@ Constraints: No main merge, deploy, Pages configuration, database changes or new
 - [x] Create branch from design/ielts-bold-paper.
 - [x] Apply a keyboard-operable shared header/footer and theme stylesheet to all 44 pages.
 - [x] Build the complete homepage around approved copy, artwork, four skill links, learning steps and contact email.
-- [ ] Check relative links, script preservation and responsive rendering at 390, 768 and 1440px.
-- [ ] Report preview-host authentication limits; do not claim logged-in assessment verification.
+- [x] Check relative links, script preservation and responsive rendering at 390, 768 and 1440px.
+- [x] Report preview-host authentication limits; do not claim logged-in assessment verification.
