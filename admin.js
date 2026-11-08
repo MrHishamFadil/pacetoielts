@@ -1,6 +1,6 @@
 // Tutor dashboard. Access is enforced by Firestore rules (2 tutor emails, verified). Everything is rendered as plain text.
 import { getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, collectionGroup, getDocs, getDoc, doc, setDoc, addDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const ADMINS=['hisham.abdelfadil2@gmail.com','hisham.abdelfadil@gmail.com'];
 const SEP='\u241F';const $=id=>document.getElementById(id);
@@ -11,7 +11,7 @@ const day=d=>d.toLocaleDateString('en-CA',{timeZone:'Asia/Riyadh'});
 const TAGS=()=>window.IYP_TAGS||{};const LESSON=t=>(window.IYP_LESSON||(()=>'lessons.html'))(t);
 const CRIT={writing:['Task achievement / response','Coherence and cohesion','Lexical resource','Grammatical range and accuracy'],speaking:['Fluency and coherence','Lexical resource','Grammatical range and accuracy','Pronunciation']};
 const PAGES=['','reading.html','listening.html','writing.html','speaking.html','vocabulary.html','lessons.html','mocks.html','diagnostic.html','l-sections-1-2.html','l-sections-3-4.html','l-predicting.html','l-keywords.html','l-specific-info.html','l-distractors.html','l-spelling-numbers.html','l-completion.html','l-mcq-matching.html','l-attitude.html','r-cohesion.html','r-guessing-context.html','plan-5-6.html','plan-6-65.html','plan-65-7.html','plan-7-plus.html'];
-let db,D={users:{},att:[],mis:[],members:{},classes:{},asg:[],subs:[],fb:{}},sel=null;
+let accessEpoch=0;let db,D={users:{},att:[],mis:[],members:{},classes:{},asg:[],subs:[],fb:{}},sel=null;
 function csvDl(rows,name){const q=v=>{let s=String(v??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
   const b=new Blob(['\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();}
 function streak(uid){const days=new Set([...D.att.filter(a=>a.uid===uid).map(a=>day(a.date)),...D.subs.filter(s=>s.uid===uid).map(s=>day(s.createdAt))]);let n=0;const d=new Date();
@@ -55,7 +55,12 @@ function Marking(v){const only=mk('select');only.append(new Option('Unmarked fir
   only.onchange=draw;v.append(only,list);draw();}
 function card(s){const c=mk('div',null,'card');const u=D.users[s.uid]||{};c.append(mk('h3',`${u.displayName||s.name} \u00b7 ${s.task} \u00b7 ${fmt(s.createdAt)}`),mk('p',`${s.words} words \u00b7 ${Math.floor(s.timeSec/60)} min${D.fb[s.id]?' \u00b7 marked':''}`));
   if(s.prompt)c.append(mk('p',s.prompt,'prompt'));let txt=null;if(s.text){txt=mk('div',s.text,'subtext');c.append(txt);}
-  if(s.audio){const b=Uint8Array.from(atob(s.audio),ch=>ch.charCodeAt(0));const a=mk('audio');a.controls=true;a.src=URL.createObjectURL(new Blob([b],{type:s.audioMime}));c.append(a);}
+  if(s.audio){try{
+    if(typeof s.audio!=='string'||s.audio.length>900000||!['audio/webm','audio/ogg','audio/mp4'].includes(s.audioMime)||s.audio.length%4!==0||!/^[A-Za-z0-9+/]*={0,2}$/.test(s.audio))throw new Error('invalid audio');
+    const b=Uint8Array.from(atob(s.audio),ch=>ch.charCodeAt(0));if(!b.length)throw new Error('empty audio');
+    const a=mk('audio');a.controls=true;const url=URL.createObjectURL(new Blob([b],{type:s.audioMime}));a.src=url;
+    a.addEventListener('error',()=>{URL.revokeObjectURL(url);a.replaceWith(mk('p','Recording unavailable. You can still mark the submission.'));},{once:true});c.append(a);
+  }catch(e){c.append(mk('p','Recording unavailable. You can still mark the submission.'));}}
   if(s.link){const a=mk('a','Open recording link');a.href=s.link;a.rel='noopener noreferrer';a.target='_blank';c.append(a);}
   const F=D.fb[s.id]||{};const g=mk('div',null,'formgrid');const bands=[];CRIT[s.kind].forEach((n,i)=>{const sl=mk('select');for(let b=9;b>=0;b-=0.5)sl.append(new Option(b,b));sl.value=F['c'+(i+1)]??6;const L=mk('label',n);L.append(sl);g.append(L);bands.push(sl);});
   const ov=mk('select');for(let b=9;b>=0;b-=0.5)ov.append(new Option(b,b));const calc=()=>{ov.value=Math.round(bands.reduce((a,b)=>a+ +b.value,0)/4*2)/2;};bands.forEach(b=>b.onchange=calc);if(F.overall!=null)ov.value=F.overall;else calc();
@@ -77,16 +82,17 @@ function Report(v){const s=mk('select');s.append(new Option('Choose a student','
   r.append(mk('h3','Writing and speaking'));D.subs.filter(x=>x.uid===sel).forEach(x=>{const f=D.fb[x.id];r.append(mk('p',`${fmt(x.createdAt)} \u00b7 ${x.task} \u00b7 ${x.words} words \u00b7 ${f?'band '+f.overall+' ('+[f.c1,f.c2,f.c3,f.c4].join(' / ')+')':'not marked'}`));});
   const mis=D.mis.filter(x=>x.uid===sel);r.append(mk('p',`Mistake log: ${mis.length} entries`));
   v.append(btn('Print / Save as PDF',()=>{document.querySelectorAll('.report details').forEach(d=>d.open=true);print();},'gold'),' ',btn('Export CSV',()=>{const rows=[['date_riyadh','section','question','tag','given','correct','result']];st.at.forEach(a=>{const g=(a.given||'').split(SEP),k=(a.correct||'').split(SEP),tg=(a.tags||'').split(',');[...(a.results||'')].forEach((x,i)=>rows.push([fmt(a.date),a.section,i+1,tg[i]||'',g[i],k[i],x==='1'?'correct':'wrong']));});csvDl(rows,`report-${(u.displayName||'student').replace(/\W+/g,'-')}.csv`);}),r);}
-async function load(){db=getFirestore(getApp());const ts=x=>x&&x.toDate?x.toDate():null;
+async function load(epoch){db=getFirestore(getApp());const ts=x=>x&&x.toDate?x.toDate():null;
   const [us,at,mi,me,cl,as,su,fb]=await Promise.all([getDocs(collection(db,'users')),getDocs(collectionGroup(db,'attempts')),getDocs(collectionGroup(db,'mistakes')),getDocs(collection(db,'members')),getDocs(collection(db,'classes')),getDocs(collection(db,'assignments')),getDocs(collection(db,'submissions')),getDocs(collection(db,'feedback'))]);
+  if(epoch!==accessEpoch)return;D={users:{},att:[],mis:[],members:{},classes:{},asg:[],subs:[],fb:{}};
   us.forEach(d=>{const x=d.data();D.users[d.id]={displayName:x.displayName,email:x.email,lastSeen:ts(x.lastSeen)};});
   at.forEach(d=>{const x=d.data();D.att.push({...x,date:ts(x.date)||new Date(0)});});mi.forEach(d=>D.mis.push({...d.data(),uid:d.ref.parent.parent.id}));
   me.forEach(d=>D.members[d.id]=d.data());D.classes.all={name:'All students',code:''};cl.forEach(d=>{if(d.id!=='all')D.classes[d.id]=d.data();});as.forEach(d=>D.asg.push({id:d.id,...d.data(),due:ts(d.data().due)}));
   su.forEach(d=>D.subs.push({id:d.id,...d.data(),createdAt:ts(d.data().createdAt)||new Date(0)}));fb.forEach(d=>D.fb[d.id]=d.data());
   $('adm').replaceChildren();nav();show('Students');}
-document.addEventListener('iyp-auth',()=>{const u=getAuth(getApp()).currentUser;
-  if(!u||!u.emailVerified||!ADMINS.includes(u.email)){location.replace('index.html');return;}
-  load().catch(()=>{$('adm').replaceChildren(mk('p','Access denied or failed to load.'));});},{once:true});
+onAuthStateChanged(getAuth(getApp()),u=>{const epoch=++accessEpoch;
+  if(!u||!u.emailVerified||!ADMINS.includes(u.email)){$('adm').replaceChildren(mk('p','Sign in with an authorised tutor account to open the dashboard.'));$('tabs').replaceChildren();$('view').replaceChildren();return;}
+  load(epoch).catch(()=>{if(epoch!==accessEpoch)return;$('adm').replaceChildren(mk('p','Access denied or failed to load.'));});});
 
 // Controls tab (additive). Writes need the proposed rules for settings/site; class actions use existing isAdmin() rules.
 const SECTIONS=[['reading','Reading'],['listening','Listening'],['writing','Writing'],['speaking','Speaking'],['vocabulary','Vocabulary'],['lessons','Lessons'],['band-scores','Band scores'],['study-plan','Study plan'],['mocks','Mocks'],['diagnostic','Diagnostic'],['faq','FAQ'],['tips','Tips']];
