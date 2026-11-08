@@ -11,27 +11,35 @@ const STOP=new Set('the a an of to in on and or is are was were be been for with
 const norm=s=>s.toLowerCase().replace(/&[a-z]+;/g,'').replace(/[.'"’()]/g,'').replace(/\s+/g,' ').trim();
 function keys(a){const k=a.split(/:\s/)[0];const out=[];k.split(/\s*\/\s*/).forEach(o=>{out.push(norm(o));out.push(norm(o.replace(/\(.*?\)/g,'')));});return out.filter(Boolean);}
 const NUMW={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50};
-const MINW={'oclock':0,'fifteen':15,'thirty':30,'fortyfive':45,'fortyfive':45,'oh five':5};
-// Canonical form for times and numbers: "6:30", "6.30 a.m.", "six thirty", "half past six" -> "6:30"; "three" -> "3".
-function canon(x){const r=canon0(x);return r.replace(/^(\d{1,2}):00$/,'$1');}
-function canon0(x){let s=String(x).toLowerCase().replace(/&[a-z]+;/g,'').replace(/[’']/g,'').replace(/\s+/g,' ').trim();
-  s=s.replace(/\s?(a\.?\s?m\.?|p\.?\s?m\.?|in the (morning|afternoon|evening)|at night)$/,'').trim();
-  const w=t=>t in NUMW?NUMW[t]:(/^\d+$/.test(t)?+t:null);
-  let m;
-  if(m=s.match(/^half past (\w+)$/)){const h=w(m[1]);if(h!=null)return h+':30';}
-  if(m=s.match(/^quarter past (\w+)$/)){const h=w(m[1]);if(h!=null)return h+':15';}
-  if(m=s.match(/^quarter to (\w+)$/)){const h=w(m[1]);if(h!=null)return (h-1)+':45';}
-  if(m=s.match(/^(\w+) ?o ?clock$/)){const h=w(m[1]);if(h!=null)return h+':00';}
-  if(m=s.match(/^(\d{1,2}) ?[:.] ?(\d{2})$/))return (+m[1])+':'+m[2];
-  if(m=s.match(/^(\w+) (\w+(?:[- ]\w+)?)$/)){const h=w(m[1]);const mm=m[2].replace(/[- ]/g,'');const mv=mm==='thirty'?30:mm==='fifteen'?15:mm==='fortyfive'?45:null;if(h!=null&&h<=12&&mv!=null)return h+':'+String(mv).padStart(2,'0');}
-  if((m=s.match(/^(\d{1,2})$/))&&/(a\.?m|p\.?m|morning|evening|afternoon)/.test(String(x).toLowerCase()))return (+m[1])+':00';
-  if(s in NUMW)return String(NUMW[s]);
-  if(m=s.match(/^(twenty|thirty|forty|fifty)[- ]?(one|two|three|four|five|six|seven|eight|nine)$/))return String(NUMW[m[1]]+NUMW[m[2]]);
-  return s.replace(/\s+/g,'');}
+// Time answers keep an explicit time of day; ordinary words keep their boundaries.
+function timeValue(x){let s=String(x).toLowerCase().replace(/[()’']/g,'').replace(/\s+/g,' ').trim(),mer=null;
+  const m=s.match(/\s*(a\.?\s*m\.?|p\.?\s*m\.?|in the morning|in the afternoon|in the evening|at night)$/);
+  if(m){mer=/^a\.?\s*m|morning/.test(m[1])?'am':'pm';s=s.slice(0,m.index).trim();}
+  if(s==='noon')return {h:12,min:0,mer:'pm'};
+  if(s==='midnight')return {h:12,min:0,mer:'am'};
+  const w=t=>t in NUMW?NUMW[t]:(/^\d+$/.test(t)?+t:null);let h,min=0,n;
+  if(n=s.match(/^(half past|quarter past|quarter to) (\w+)$/)){h=w(n[2]);if(h==null||h<1||h>12)return null;min=n[1]==='half past'?30:n[1]==='quarter past'?15:45;if(n[1]==='quarter to')h=(h+10)%12+1;}
+  else if(n=s.match(/^(\w+) ?o ?clock$/)){h=w(n[1]);}
+  else if(n=s.match(/^(\d{1,2})(?:\s*[:.]\s*(\d{2}))?$/)){h=+n[1];min=+(n[2]||0);}
+  else if(n=s.match(/^(\w+) (fifteen|thirty|forty[- ]?five)$/)){h=w(n[1]);min=n[2]==='fifteen'?15:n[2]==='thirty'?30:45;}
+  else return null;
+  if(h==null||h<0||h>23||min>59||(mer&&(h<1||h>12)))return null;
+  return {h,min,mer};}
+function sameTime(a,b){if(a.min!==b.min)return false;
+  const hours=t=>t.mer?(t.h%12+(t.mer==='pm'?12:0)):t.h;
+  if((a.mer&&b.mer)||a.h>12||b.h>12||a.h===0||b.h===0)return hours(a)===hours(b);
+  return a.h===b.h;}
+function canon(x){let s=norm(String(x));if(s in NUMW)return String(NUMW[s]);
+  const m=s.match(/^(twenty|thirty|forty|fifty)[- ]?(one|two|three|four|five|six|seven|eight|nine)$/);
+  return m?String(NUMW[m[1]]+NUMW[m[2]]):s;}
 const TYPES=[['number','numbers','price','amount','cost','figure','money','sum','digit','digits','numeral','quantity'],['plural noun','plural nouns','plural','noun','nouns','plural noun form'],['noun','nouns','singular noun','plural noun','thing','object'],['adjective','adj','adjectives','describing word'],['verb','verbs','action'],['adverb','adverbs'],['date','day','dates'],['time','times','hour','clock time'],['name','names','proper noun','person'],['place','location','places']];
 function typeOk(v,k){const t=k.map(x=>x.toLowerCase().trim());return TYPES.some(g=>t.some(x=>x===g[0])&&g.includes(v.toLowerCase().trim()));}
-window.IYP_MATCH=function(given,answer){const v=norm(given);if(!v)return false;const k=keys(answer);const cv=canon(given);if(typeOk(v,k))return true;
-  return k.some(x=>x===v||x.replace(/\s+/g,'')===v.replace(/\s+/g,'')||(x.length>2&&v.replace(/^the /,'')===x.replace(/^the /,'')))||answer.split(/:\s/)[0].split('/').some(o=>[o,o.replace(/\(.*?\)/g,'')].some(r=>canon(r)===cv));};
+window.IYP_MATCH=function(given,answer){const v=norm(given);if(!v)return false;const k=keys(answer);if(typeOk(v,k))return true;
+  const gt=timeValue(given);
+  return answer.split(/:\s/)[0].split('/').some(o=>{
+    const at=timeValue(o);if(gt&&at)return sameTime(gt,at);
+    // Do not erase a time-of-day qualifier through the optional-word fallback.
+    return [o,o.replace(/\(.*?\)/g,'')].some(r=>{const x=norm(r);return x===v||(x.length>2&&v.replace(/^the /,'')===x.replace(/^the /,''))||canon(r)===canon(given);});});};
 function lev(a,b){const m=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=m[0];m[0]=i;for(let j=1;j<=b.length;j++){const t=m[j];m[j]=Math.min(m[j]+1,m[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t;}}return m[b.length];}
 function tagFor(q,li,ans,i){
   if(q.dataset.tags){const t=q.dataset.tags.split(',');return t[i%t.length];}
@@ -83,7 +91,7 @@ document.querySelectorAll('.quiz').forEach(q=>{
   rs.onclick=()=>{t0=Date.now();q.querySelectorAll('.qfb').forEach(x=>x.remove());q.querySelectorAll('.ans-in').forEach(i=>{i.value='';i.className='ans-in';i.nextSibling.textContent='';});sc.textContent=`Score: \u2013/${qs.length}`;if(iv)clearInterval(iv);iv=null;tm.textContent='';};
 });
 speedCtl();quicknav();dash();results();mistakes();if(location.hash){const t=document.getElementById(location.hash.slice(1));if(t)t.scrollIntoView();}};
-function speedCtl(){const K='pti_speed';let r=parseFloat(localStorage.getItem(K))||1;
+function speedCtl(){const K='pti_speed';let r=1;try{const saved=Number(localStorage.getItem(K));if(saved===1||saved===0.85)r=saved;}catch(e){}
   document.querySelectorAll('main audio').forEach(au=>{if(/speaking-model/.test(au.getAttribute('src')||'')||au.dataset.spd)return;au.dataset.spd=1;
     au.preservesPitch=true;au.mozPreservesPitch=true;au.webkitPreservesPitch=true;
     const box=mk('div','speed');box.setAttribute('role','group');box.setAttribute('aria-label','Playback speed');box.append(mk('span','speed-l','Speed:'));
