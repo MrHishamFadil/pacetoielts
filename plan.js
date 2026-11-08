@@ -44,7 +44,7 @@ async function myPage(u){
   a.className='btn';a.href='choose-plan.html';
   if(!s||!s.exists()){h.textContent='My Plan';p.textContent='You have not chosen a plan yet.';a.textContent='Choose your Pace';out.append(h,p,a);return;}
   const d=s.data(),total=WEEKS[d.path][d.pace],start=d.startedAt?d.startedAt.toDate():new Date();
-  const week=Math.min(total,Math.floor((Date.now()-start)/(7*DAY))+1),pct=Math.round(100*(week-1)/total);
+  const elapsed=Math.max(0,Math.floor((Date.now()-start)/(7*DAY))),week=Math.min(total,elapsed+1),pct=Math.min(100,Math.round(100*elapsed/total));
   h.textContent=`My Plan: ${PATHS[d.path].name} · ${PACES[d.pace]}`;
   let line=`Target band ${PATHS[d.path].band} · Week ${week} of ${total} · Started ${fmt(start)}`;
   if(d.examDate){const ex=new Date(d.examDate+'T00:00:00'),wl=Math.ceil((ex-Date.now())/(7*DAY));
