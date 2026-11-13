@@ -10,7 +10,7 @@ let db,auth,u,root;
 document.addEventListener('iyp-content',e=>{if(e.detail!=='homework')return;db=getFirestore(getApp());auth=getAuth(getApp());u=auth.currentUser;root=document.getElementById('hw');if(u&&root)load().catch(()=>{root.replaceChildren(mk('p',null,'Could not load homework. Please refresh.'));});});
 async function load(){
   const mem=await getDoc(doc(db,'members',u.uid));const classId=mem.exists()?mem.data().classId:'';
-  const qs=[getDocs(query(collection(db,'assignments'),where('studentUid','==',u.uid))),getDocs(query(collection(db,'assignments'),where('classId','==','all')))];if(classId&&classId!=='all')qs.push(getDocs(query(collection(db,'assignments'),where('classId','==',classId))));
+  const qs=[getDocs(query(collection(db,'assignments'),where('studentUid','==',u.uid))),getDocs(query(collection(db,'assignments'),where('classId','==','all')))];if(classId&&classId!=='all')qs.push(getDocs(query(collection(db,'assignments'),where('classId','==',classId))));const em=String(u.email||'').toLowerCase();if(em&&u.emailVerified)qs.push(getDocs(query(collection(db,'assignments'),where('studentEmail','==',em))).catch(()=>({docs:[]})));
   const [subs,fbs,...as]=await Promise.all([getDocs(query(collection(db,'submissions'),where('uid','==',u.uid))),getDocs(query(collection(db,'feedback'),where('uid','==',u.uid))),...qs]);
   const S=subs.docs.map(d=>({id:d.id,...d.data()})),F=Object.fromEntries(fbs.docs.map(d=>[d.id,d.data()]));
   const A=[...new Map(as.flatMap(s=>s.docs.map(d=>[d.id,{id:d.id,...d.data()}]))).values()].sort((x,y)=>x.due.toMillis()-y.due.toMillis());
