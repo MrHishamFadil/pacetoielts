@@ -19,9 +19,9 @@ function streak(uid){const days=new Set([...D.att.filter(a=>a.uid===uid).map(a=>
 function stats(uid){const at=D.att.filter(a=>a.uid===uid);const A=window.IYP_ANALYSE?window.IYP_ANALYSE(at):{sec:{},micro:{},weak:[],task:{}};
   const pc=k=>A.sec[k]?Math.round(100*A.sec[k][0]/A.sec[k][1])+'%':'\u2013';const u=D.users[uid]||{};const last=[u.lastSeen,...at.map(a=>a.date)].filter(Boolean).sort((x,y)=>y-x)[0];
   return {at,A,reading:pc('Reading'),listening:pc('Listening'),avg:at.length?Math.round(at.reduce((s,a)=>s+a.pct,0)/at.length):'',last,streak:streak(uid)};}
-const tabs=['Students','Classes','Assignments','Marking','Report','Controls'];
+const tabs=['Students','Tracker','Classes','Assignments','Marking','Report','Controls'];
 function nav(){const n=$('tabs');n.replaceChildren();tabs.forEach(t=>n.append(btn(t,()=>show(t),'tab')));}
-function show(t){document.querySelectorAll('#tabs .tab').forEach(b=>b.classList.toggle('gold',b.textContent===t));const v=$('view');v.replaceChildren();({Students,Classes,Assignments,Marking,Report,Controls})[t](v);}
+function show(t){document.querySelectorAll('#tabs .tab').forEach(b=>b.classList.toggle('gold',b.textContent===t));const v=$('view');v.replaceChildren();({Students,Tracker,Classes,Assignments,Marking,Report,Controls})[t](v);}
 function Students(v){const cf=mk('select');cf.append(new Option('All classes',''));Object.entries(D.classes).forEach(([id,c])=>cf.append(new Option(c.name,id)));
   const tb=mk('tbody');const draw=()=>{tb.replaceChildren();Object.keys(D.users).filter(uid=>!cf.value||(D.members[uid]||{}).classId===cf.value).map(uid=>[uid,stats(uid)]).sort((x,y)=>(y[1].last||0)-(x[1].last||0)).forEach(([uid,s])=>{const u=D.users[uid];
     const r=mk('tr');const nm=mk('td');nm.append(btn(u.displayName||'(no name)',()=>{sel=uid;show('Report');},'linkbtn'));
@@ -85,6 +85,36 @@ function Report(v){const s=mk('select');s.append(new Option('Choose a student','
   r.append(mk('h3','Writing and speaking'));D.subs.filter(x=>x.uid===sel).forEach(x=>{const f=D.fb[x.id];r.append(mk('p',`${fmt(x.createdAt)} \u00b7 ${x.task} \u00b7 ${x.words} words \u00b7 ${f?'band '+f.overall+' ('+[f.c1,f.c2,f.c3,f.c4].join(' / ')+')':'not marked'}`));});
   const mis=D.mis.filter(x=>x.uid===sel);r.append(mk('p',`Mistake log: ${mis.length} entries`));
   v.append(btn('Print / Save as PDF',()=>{document.querySelectorAll('.report details').forEach(d=>d.open=true);print();},'gold'),' ',btn('Export CSV',()=>{const rows=[['date_riyadh','section','question','tag','given','correct','result']];st.at.forEach(a=>{const g=(a.given||'').split(SEP),k=(a.correct||'').split(SEP),tg=(a.tags||'').split(',');[...(a.results||'')].forEach((x,i)=>rows.push([fmt(a.date),a.section,i+1,tg[i]||'',g[i],k[i],x==='1'?'correct':'wrong']));});csvDl(rows,`report-${(u.displayName||'student').replace(/\W+/g,'-')}.csv`);}),r);}
+// Tracker tab (read-only): weekly assignments, skills and question types over time, recurring mistakes. Data comes from load(); nothing is written.
+let tsel=null;
+function tbl(head,rows){const t=mk('table');const h=mk('tr');head.forEach(x=>h.append(mk('th',x)));t.append(h);rows.forEach(r=>{const tr=mk('tr');r.forEach(x=>tr.append(x instanceof Node?(()=>{const td=mk('td');td.append(x);return td;})():mk('td',x??'\u2013')));t.append(tr);});t.querySelectorAll('td,th').forEach(c=>{c.style.overflowWrap='normal';c.style.minWidth='4.5em';});const box=mk('div');box.style.overflowX='auto';box.append(t);return box;}
+const pctTxt=x=>x==null?'\u2013':x+'%';const dShort=d=>d?d.toLocaleDateString('en-GB',{timeZone:'Asia/Riyadh',weekday:'short',day:'numeric',month:'short'}):'\u2013';
+const wkTxt=w=>w?'Week of '+new Date(w+'T12:00:00Z').toLocaleDateString('en-GB',{timeZone:'UTC',weekday:'short',day:'numeric',month:'short'}):'No due date';
+const trTxt=t=>t.delta==null?t.label:`${t.label} (${t.delta>0?'+':''}${t.delta} pts)`;
+function bar(p){const o=mk('span');o.style.display='inline-block';o.style.width='120px';o.style.height='10px';o.style.border='1px solid currentColor';o.style.borderRadius='6px';o.style.verticalAlign='middle';o.style.marginRight='6px';
+  const i=mk('span');i.style.display='block';i.style.height='100%';i.style.width=(p||0)+'%';i.style.background='currentColor';i.style.borderRadius='6px';o.append(i);const w=mk('span');w.append(o,`${p}%`);return w;}
+function Tracker(v){const T=window.PTI_TRACK;if(!T){v.append(mk('p','Tracker could not load. Refresh the page.'));return;}
+  const list=T.students({users:D.users,att:D.att,asg:D.asg,members:D.members,admins:ADMINS});
+  const s=mk('select');list.forEach(x=>s.append(new Option(`${x.name}${x.email?' ('+x.email+')':''}`,x.uid)));if(!list.length){v.append(mk('p','No students yet.'));return;}
+  if(!tsel){try{tsel=localStorage.getItem('pti-tracker-student');}catch(e){}}if(!tsel||!list.some(x=>x.uid===tsel))tsel=list[0].uid;s.value=tsel;s.onchange=()=>{tsel=s.value;try{localStorage.setItem('pti-tracker-student',tsel);}catch(e){}show('Tracker');};
+  const u=D.users[tsel]||{};const R=T.analyse({uid:tsel,user:u,member:D.members[tsel],att:D.att,mis:D.mis,asg:D.asg,subs:D.subs,now:new Date()});const t=R.totals;
+  v.append(mk('label','Student '),s,mk('p',`${t.attempts} checked exercises \u00b7 ${t.correct}/${t.answered} questions correct (${pctTxt(t.pct)}) \u00b7 last practice ${t.last?fmt(t.last):'never'} \u00b7 assignments ${t.done}/${t.assignments} done, ${t.overdue} overdue \u00b7 times in Riyadh time`));
+  const a=mk('div',null,'card');a.append(mk('h3','Weekly assignments'));
+  if(!R.weeks.length)a.append(mk('p','No assignments for this student yet. Create one in the Assignments tab.'));
+  R.weeks.forEach(w=>{a.append(mk('h4',`${wkTxt(w.week)}: ${w.done}/${w.items.length} done${w.overdue?`, ${w.overdue} overdue`:''}`),tbl(['Assignment','Due','Status','Progress','Scores'],w.items.map(x=>[`${x.title} \u00b7 ${x.link||x.kind}`,dShort(x.due),x.status+(x.completedLate?' (late)':''),x.kind==='writing'||x.kind==='speaking'?(x.submitted?'submitted':'not submitted'):x.total?`${Math.min(x.done,x.total)}/${x.total} parts`:`${x.done} part(s)`,x.scores||'\u2013'])));});v.append(a);
+  const k=mk('div',null,'card');k.append(mk('h3','Skills over time'));
+  if(!R.skills.length)k.append(mk('p','No checked answers yet.'));
+  else{k.append(tbl(['Skill','Questions','Overall','First attempt','Latest attempt','Trend'],R.skills.map(x=>[x.skill,x.answered,bar(x.pct),`${pctTxt(x.first.pct)} \u00b7 ${dShort(x.first.date)}`,`${pctTxt(x.latest.pct)} \u00b7 ${dShort(x.latest.date)}`,trTxt(x.trend)])));
+    R.skills.forEach(x=>{k.append(mk('h4',`${x.skill} by week`),tbl(['Week','Questions','Correct'],x.weekly.map(w=>[wkTxt(w.week),w.n,bar(w.pct)])));});}
+  v.append(k);
+  const q=mk('div',null,'card');q.append(mk('h3','Question types (weakest first)'));
+  q.append(R.tags.length?tbl(['Type','Skill','Correct','First','Latest','Trend'],R.tags.map(x=>[`${x.tag} ${TAGS()[x.tag]||''}`.trim(),x.skill,`${x.correct}/${x.answered} (${pctTxt(x.pct)})`,pctTxt(x.first.pct),pctTxt(x.latest.pct),trTxt(x.trend)])):mk('p','No tagged questions yet.'));v.append(q);
+  const f=mk('div',null,'card');f.append(mk('h3','Exercises: first vs latest attempt'));
+  f.append(R.sections.length?tbl(['Exercise','Attempts','First','Latest','Best'],R.sections.map(x=>[x.section,x.attempts,`${x.first.score}/${x.first.max} \u00b7 ${dShort(x.first.date)}`,`${x.latest.score}/${x.latest.max} \u00b7 ${dShort(x.latest.date)}`,x.best+'%'])):mk('p','No attempts yet.'));v.append(f);
+  const m=mk('div',null,'card');m.append(mk('h3','Recurring mistakes'));
+  m.append(mk('p',R.topWrong.length?'Most wrong answers by type: '+R.topWrong.map(x=>`${x.tag} (${x.wrong})`).join(', '):'No wrong answers recorded yet.'));
+  m.append(R.recurring.length?tbl(['Question','Type','Times wrong','Student wrote','Answer','Now'],R.recurring.slice(0,20).map(x=>[`${x.section} Q${x.q}`,x.tag,x.count,x.given.join(' / ')||'(blank)',x.correct.split(/:\s/)[0],x.nowCorrect?'fixed':'still wrong'])):mk('p','No question has been missed twice yet.'));
+  m.append(mk('p',`Mistake log entries: ${t.logged}`,'disclaimer'));v.append(m);}
 async function load(epoch){db=getFirestore(getApp());const ts=x=>x&&x.toDate?x.toDate():null;
   const [us,at,mi,me,cl,as,su,fb]=await Promise.all([getDocs(collection(db,'users')),getDocs(collectionGroup(db,'attempts')),getDocs(collectionGroup(db,'mistakes')),getDocs(collection(db,'members')),getDocs(collection(db,'classes')),getDocs(collection(db,'assignments')),getDocs(collection(db,'submissions')),getDocs(collection(db,'feedback'))]);
   if(epoch!==accessEpoch)return;D={users:{},att:[],mis:[],members:{},classes:{},asg:[],subs:[],fb:{}};
