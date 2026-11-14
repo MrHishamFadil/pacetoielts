@@ -22,12 +22,54 @@ function stats(uid){const at=D.att.filter(a=>a.uid===uid);const A=window.IYP_ANA
 const tabs=['Students','Tracker','Classes','Assignments','Marking','Report','Controls'];
 function nav(){const n=$('tabs');n.replaceChildren();tabs.forEach(t=>n.append(btn(t,()=>show(t),'tab')));}
 function show(t){document.querySelectorAll('#tabs .tab').forEach(b=>b.classList.toggle('gold',b.textContent===t));const v=$('view');v.replaceChildren();({Students,Tracker,Classes,Assignments,Marking,Report,Controls})[t](v);}
+async function colRefs(...path){try{return(await getDocs(collection(db,...path))).docs.map(d=>d.ref);}catch(e){return[];}}
+async function flushRefs(refs){const seen=new Set();const uniq=refs.filter(r=>{const k=r.path||String(r);if(seen.has(k))return false;seen.add(k);return true;});for(let i=0;i<uniq.length;i+=400){const b=writeBatch(db);uniq.slice(i,i+400).forEach(r=>b.delete(r));await b.commit();}}
+function isListedTutor(email){return ADMINS.includes(String(email||'').trim().toLowerCase());}
+async function wipeStudent(uid,mode){
+  const u=D.users[uid]||{};
+  const refs=[...await colRefs('users',uid,'attempts'),...await colRefs('users',uid,'scores'),...await colRefs('users',uid,'mistakes'),...await colRefs('users',uid,'usageDaily'),...await colRefs('users',uid,'usagePreference')];
+  const subs=(await getDocs(collection(db,'submissions'))).docs.filter(d=>d.data().uid===uid);
+  subs.forEach(d=>refs.push(d.ref));
+  const subIds=new Set(subs.map(d=>d.id));
+  (await getDocs(collection(db,'feedback'))).docs.forEach(d=>{if(subIds.has(d.id)||d.data().uid===uid)refs.push(d.ref);});
+  if(mode==='delete'){
+    refs.push(...await colRefs('users',uid,'plan'));
+    (await getDocs(collection(db,'assignments'))).docs.forEach(d=>{const x=d.data();if(!(x.classId||'')&&(((x.studentUid||'')===uid)||(u.email&&(x.studentEmail||'')===String(u.email).toLowerCase())))refs.push(d.ref);});
+    try{const m=await getDoc(doc(db,'members',uid));if(m.exists())refs.push(m.ref);}catch(e){}
+    refs.push(doc(db,'users',uid));
+  }
+  await flushRefs(refs);
+}
+function askWipe(v,uid,mode){
+  const u=D.users[uid]||{};const email=String(u.email||'');const name=u.displayName||email||uid;
+  if(mode==='delete'&&isListedTutor(email)){const c=mk('div',null,'card');c.append(mk('h3','Tutor account'),mk('p','Accounts on the tutor email list cannot be deleted from the website.'),btn('Back',()=>show('Students')));v.replaceChildren(c);return;}
+  const box=mk('div',null,'card');
+  box.append(mk('h3',mode==='delete'?'Delete student':'Clear results'));
+  box.append(mk('p',mode==='delete'
+    ?`This permanently removes ${name}'s profile from the website, together with their attempts, scores, mistake log, submissions, marks, time records, class membership and assignments that were set only for them. Class-wide assignments are kept.`
+    :`This permanently removes ${name}'s attempts, scores, mistake log, writing and speaking submissions (and any marks on them), and any time records. Their account, class membership and assignments stay.`));
+  if(mode==='delete')box.append(mk('p','The Firebase Auth login itself cannot be removed from the website (that needs Cloud Functions). After you delete their profile they would have to sign in again to re-register and appear on this list. To delete the Auth login, open the Firebase console, go to Authentication, then Users, find this email, and delete it.','disclaimer'));
+  box.append(mk('p','Type their email to confirm: '+email));
+  const inp=mk('input',null,'ans-in');inp.type='email';inp.autocomplete='off';inp.maxLength=254;inp.setAttribute('aria-label','Type the student email to confirm');
+  const msg=mk('p');
+  const go=btn(mode==='delete'?'Delete student':'Clear results',async()=>{
+    if(inp.value.trim().toLowerCase()!==email.toLowerCase()){msg.textContent='Type their email to confirm.';return;}
+    if(mode==='delete'&&isListedTutor(email)){msg.textContent='Tutor accounts cannot be deleted.';return;}
+    go.disabled=true;
+    try{await wipeStudent(uid,mode);await load(accessEpoch);}catch(e){go.disabled=false;msg.textContent='Could not finish. Some records may already have been removed. Try again, or check the Firebase console.';}}
+  ,mode==='delete'?'':'gold');
+  box.append(inp,go,btn('Cancel',()=>show('Students')),msg);v.replaceChildren(box);
+}
 function Students(v){const cf=mk('select');cf.append(new Option('All classes',''));Object.entries(D.classes).forEach(([id,c])=>cf.append(new Option(c.name,id)));
   const tb=mk('tbody');const draw=()=>{tb.replaceChildren();Object.keys(D.users).filter(uid=>!cf.value||(D.members[uid]||{}).classId===cf.value).map(uid=>[uid,stats(uid)]).sort((x,y)=>(y[1].last||0)-(x[1].last||0)).forEach(([uid,s])=>{const u=D.users[uid];
     const r=mk('tr');const nm=mk('td');nm.append(btn(u.displayName||'(no name)',()=>{sel=uid;show('Report');},'linkbtn'));
-    r.append(nm,mk('td',u.email),mk('td',(D.classes[(D.members[uid]||{}).classId]||{}).name||'\u2013'),mk('td',s.reading),mk('td',s.listening),mk('td',s.A.weak.map(w=>`${w[0]} ${w[1]}%`).join(', ')||'\u2013'),mk('td',fmt(s.last)),mk('td',s.streak?s.streak+' d':'0'),mk('td',s.at.length));tb.append(r);});};
-  cf.onchange=draw;const t=mk('table');const h=mk('tr');['Name','Email','Class','Reading','Listening','Top weaknesses','Last active','Streak','Tests'].forEach(x=>h.append(mk('th',x)));t.append(h,tb);
-  const w=mk('div',null,'tablewrap');w.append(t);v.append(mk('p',`${Object.keys(D.users).length} students \u00b7 ${D.att.length} tests \u00b7 ${D.subs.length} submissions`),cf,w,btn('Export all results (CSV)',exportAll));draw();}
+    const act=mk('td');act.append(btn('Clear results',()=>askWipe(v,uid,'clear')));
+    if(isListedTutor(u.email))act.append(mk('span','Tutor account — cannot delete','disclaimer'));
+    else act.append(btn('Delete student',()=>askWipe(v,uid,'delete')));
+    r.append(nm,mk('td',u.email),mk('td',(D.classes[(D.members[uid]||{}).classId]||{}).name||'\u2013'),mk('td',s.reading),mk('td',s.listening),mk('td',s.A.weak.map(w=>`${w[0]} ${w[1]}%`).join(', ')||'\u2013'),mk('td',fmt(s.last)),mk('td',s.streak?s.streak+' d':'0'),mk('td',s.at.length),act);tb.append(r);});};
+  cf.onchange=draw;const t=mk('table');const h=mk('tr');['Name','Email','Class','Reading','Listening','Top weaknesses','Last active','Streak','Tests','Actions'].forEach(x=>h.append(mk('th',x)));t.append(h,tb);
+  const w=mk('div',null,'tablewrap');w.append(t);v.append(mk('p',`${Object.keys(D.users).length} students \u00b7 ${D.att.length} tests \u00b7 ${D.subs.length} submissions`),mk('p','Clear results removes a student\u2019s practice data but keeps their account. Delete student removes their profile and data from the website. Tutor accounts cannot be deleted here. The Firebase Auth login itself cannot be removed from the website (that needs Cloud Functions); after a profile is deleted they would have to sign in again to re-register. To delete an Auth login, open the Firebase console, go to Authentication, then Users.','disclaimer'),cf,w,btn('Export all results (CSV)',exportAll));draw();}
+
 function exportAll(){const rows=[['name','email','class','section','score','max','pct','time_sec','date_riyadh','question','tag','given','correct','result']];
   D.att.forEach(a=>{const u=D.users[a.uid]||{};const g=(a.given||'').split(SEP),k=(a.correct||'').split(SEP),tg=(a.tags||'').split(',');[...(a.results||'')].forEach((r,i)=>rows.push([u.displayName,u.email,(D.classes[(D.members[a.uid]||{}).classId]||{}).name,a.section,a.score,a.max,a.pct,a.timeSec,fmt(a.date),i+1,tg[i]||'',g[i],k[i],r==='1'?'correct':'wrong']));});
   csvDl(rows,'pacetoielts-all-results.csv');}
