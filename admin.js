@@ -1,7 +1,7 @@
 // Tutor dashboard. Access is enforced by Firestore rules (2 tutor emails, verified). Everything is rendered as plain text.
 import { getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, collectionGroup, getDocs, getDoc, doc, setDoc, addDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, collectionGroup, getDocs, getDoc, doc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const ADMINS=['hisham.abdelfadil2@gmail.com','hisham.abdelfadil@gmail.com'];
 const SEP='\u241F';const $=id=>document.getElementById(id);
 const mk=(t,x,c)=>{const e=document.createElement(t);if(x!=null)e.textContent=String(x);if(c)e.className=c;return e;};
@@ -11,7 +11,7 @@ const day=d=>d.toLocaleDateString('en-CA',{timeZone:'Asia/Riyadh'});
 const TAGS=()=>window.IYP_TAGS||{};const LESSON=t=>(window.IYP_LESSON||(()=>'lessons.html'))(t);
 const CRIT={writing:['Task achievement / response','Coherence and cohesion','Lexical resource','Grammatical range and accuracy'],speaking:['Fluency and coherence','Lexical resource','Grammatical range and accuracy','Pronunciation']};
 const PAGES=['','reading.html','listening.html','writing.html','speaking.html','vocabulary.html','lessons.html','mocks.html','diagnostic.html','l-sections-1-2.html','l-sections-3-4.html','l-predicting.html','l-keywords.html','l-specific-info.html','l-distractors.html','l-spelling-numbers.html','l-completion.html','l-mcq-matching.html','l-attitude.html','r-cohesion.html','r-guessing-context.html','listening-note-completion.html','listening-multiple-choice.html','listening-matching.html','listening-map-labelling.html','listening-sentence-completion.html','listening-distractors.html','listening-full-part.html','listening-test-1.html','reading-tfng.html','reading-headings.html','reading-matching-info.html','reading-completion.html','reading-multiple-choice.html','reading-short-answer.html','reading-full-passage-1.html','reading-test-1.html','plan-5-6.html','plan-6-65.html','plan-65-7.html','plan-7-plus.html'];
-let accessEpoch=0;let db,D={users:{},att:[],mis:[],members:{},classes:{},asg:[],subs:[],fb:{}},sel=null;
+let accessEpoch=0;let db,D={users:{},att:[],mis:[],members:{},classes:{},asg:[],subs:[],fb:{}},sel=null,showArchived=false;
 function csvDl(rows,name){const q=v=>{let s=String(v??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
   const b=new Blob(['\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();}
 function streak(uid){const days=new Set([...D.att.filter(a=>a.uid===uid).map(a=>day(a.date)),...D.subs.filter(s=>s.uid===uid).map(s=>day(s.createdAt))]);let n=0;const d=new Date();
@@ -60,15 +60,45 @@ function askWipe(v,uid,mode){
   ,mode==='delete'?'':'gold');
   box.append(inp,go,btn('Cancel',()=>show('Students')),msg);v.replaceChildren(box);
 }
+async function setArchived(uid,on){
+  const u=D.users[uid]||{};
+  if(on&&isListedTutor(u.email))throw new Error('tutor');
+  await updateDoc(doc(db,'users',uid),on?{archived:true,archivedAt:serverTimestamp()}:{archived:false});
+}
+function askArchive(v,uid,on){
+  const u=D.users[uid]||{};const email=String(u.email||'');const name=u.displayName||email||uid;
+  if(on&&isListedTutor(email)){const c=mk('div',null,'card');c.append(mk('h3','Tutor account'),mk('p','Accounts on the tutor email list cannot be archived.'),btn('Back',()=>show('Students')));v.replaceChildren(c);return;}
+  const box=mk('div',null,'card');
+  box.append(mk('h3',on?'Archive student':'Restore student'));
+  box.append(mk('p',on
+    ?`Hide ${name} from the Students list, the Tracker and the assign lists? Their results and assignments are kept, and you can restore them later.`
+    :`Show ${name} in the Students list, the Tracker and the assign lists again?`));
+  const msg=mk('p');
+  const go=btn(on?'Archive':'Restore',async()=>{
+    if(on&&isListedTutor(email)){msg.textContent='Tutor accounts cannot be archived.';return;}
+    go.disabled=true;
+    try{await setArchived(uid,on);await load(accessEpoch);}catch(e){go.disabled=false;msg.textContent='Could not update this student. Try again.';}}
+  ,'gold');
+  box.append(go,btn('Cancel',()=>show('Students')),msg);v.replaceChildren(box);
+}
 function Students(v){const cf=mk('select');cf.append(new Option('All classes',''));Object.entries(D.classes).forEach(([id,c])=>cf.append(new Option(c.name,id)));
-  const tb=mk('tbody');const draw=()=>{tb.replaceChildren();Object.keys(D.users).filter(uid=>!cf.value||(D.members[uid]||{}).classId===cf.value).map(uid=>[uid,stats(uid)]).sort((x,y)=>(y[1].last||0)-(x[1].last||0)).forEach(([uid,s])=>{const u=D.users[uid];
+  const tb=mk('tbody');const ac=mk('input');ac.type='checkbox';ac.checked=showArchived;ac.setAttribute('aria-label','Show archived');
+  const al=mk('label');al.append(ac,' Show archived');
+  const visible=()=>Object.keys(D.users).filter(uid=>(!cf.value||(D.members[uid]||{}).classId===cf.value)&&(ac.checked||!D.users[uid].archived));
+  const draw=()=>{showArchived=ac.checked;tb.replaceChildren();visible().map(uid=>[uid,stats(uid)]).sort((x,y)=>(y[1].last||0)-(x[1].last||0)).forEach(([uid,s])=>{const u=D.users[uid];
     const r=mk('tr');const nm=mk('td');nm.append(btn(u.displayName||'(no name)',()=>{sel=uid;show('Report');},'linkbtn'));
-    const act=mk('td');act.append(btn('Clear results',()=>askWipe(v,uid,'clear')));
+    if(u.archived)nm.append(mk('span',' (archived)','disclaimer'));
+    const act=mk('td');
+    if(u.archived)act.append(btn('Restore',()=>askArchive(v,uid,false)));
+    else if(isListedTutor(u.email))act.append(mk('span','Tutor account — cannot archive','disclaimer'));
+    else act.append(btn('Archive',()=>askArchive(v,uid,true)));
+    act.append(btn('Clear results',()=>askWipe(v,uid,'clear')));
     if(isListedTutor(u.email))act.append(mk('span','Tutor account — cannot delete','disclaimer'));
     else act.append(btn('Delete student',()=>askWipe(v,uid,'delete')));
     r.append(nm,mk('td',u.email),mk('td',(D.classes[(D.members[uid]||{}).classId]||{}).name||'\u2013'),mk('td',s.reading),mk('td',s.listening),mk('td',s.A.weak.map(w=>`${w[0]} ${w[1]}%`).join(', ')||'\u2013'),mk('td',fmt(s.last)),mk('td',s.streak?s.streak+' d':'0'),mk('td',s.at.length),act);tb.append(r);});};
-  cf.onchange=draw;const t=mk('table');const h=mk('tr');['Name','Email','Class','Reading','Listening','Top weaknesses','Last active','Streak','Tests','Actions'].forEach(x=>h.append(mk('th',x)));t.append(h,tb);
-  const w=mk('div',null,'tablewrap');w.append(t);v.append(mk('p',`${Object.keys(D.users).length} students \u00b7 ${D.att.length} tests \u00b7 ${D.subs.length} submissions`),mk('p','Clear results removes a student\u2019s practice data but keeps their account. Delete student removes their profile and data from the website. Tutor accounts cannot be deleted here. The Firebase Auth login itself cannot be removed from the website (that needs Cloud Functions); after a profile is deleted they would have to sign in again to re-register. To delete an Auth login, open the Firebase console, go to Authentication, then Users.','disclaimer'),cf,w,btn('Export all results (CSV)',exportAll));draw();}
+  cf.onchange=draw;ac.onchange=draw;const t=mk('table');const h=mk('tr');['Name','Email','Class','Reading','Listening','Top weaknesses','Last active','Streak','Tests','Actions'].forEach(x=>h.append(mk('th',x)));t.append(h,tb);
+  const nArch=Object.values(D.users).filter(u=>u.archived).length;const nShow=Object.keys(D.users).length-nArch;
+  const w=mk('div',null,'tablewrap');w.append(t);v.append(mk('p',`${nShow} students${nArch?` \u00b7 ${nArch} archived`:''} \u00b7 ${D.att.length} tests \u00b7 ${D.subs.length} submissions`),mk('p','Archive hides a student from this list, the Tracker and the assign lists, but keeps all their data. Restore brings them back. Clear results removes a student\u2019s practice data but keeps their account. Delete student removes their profile and data from the website. Tutor accounts cannot be archived or deleted here. The Firebase Auth login itself cannot be removed from the website (that needs Cloud Functions); after a profile is deleted they would have to sign in again to re-register. To delete an Auth login, open the Firebase console, go to Authentication, then Users.','disclaimer'),cf,al,w,btn('Export all results (CSV)',exportAll));draw();}
 
 function exportAll(){const rows=[['name','email','class','section','score','max','pct','time_sec','date_riyadh','question','tag','given','correct','result']];
   D.att.forEach(a=>{const u=D.users[a.uid]||{};const g=(a.given||'').split(SEP),k=(a.correct||'').split(SEP),tg=(a.tags||'').split(',');[...(a.results||'')].forEach((r,i)=>rows.push([u.displayName,u.email,(D.classes[(D.members[a.uid]||{}).classId]||{}).name,a.section,a.score,a.max,a.pct,a.timeSec,fmt(a.date),i+1,tg[i]||'',g[i],k[i],r==='1'?'correct':'wrong']));});
@@ -81,13 +111,14 @@ function Assignments(v){const f=mk('div','card');f.append(mk('h3','New assignmen
   const title=mk('input',null,'ans-in');title.placeholder='Title';title.maxLength=120;const kind=mk('select');['lesson','mock','writing','speaking'].forEach(k=>kind.append(new Option(k,k)));
   const lk=mk('select');PAGES.forEach(p=>lk.append(new Option(p||'(no page link)',p)));const task=mk('select');['','W1','W2','S1','S2','S3'].forEach(k=>task.append(new Option(k||'(task type)',k)));
   const pr=mk('textarea');pr.rows=3;pr.maxLength=2000;pr.placeholder='Instructions or the task question (original wording)';
-  const to=mk('select');Object.entries(D.classes).forEach(([id,c])=>to.append(new Option('Class: '+c.name,'c:'+id)));Object.entries(D.users).forEach(([id,u])=>to.append(new Option('Student: '+(u.displayName||u.email),'s:'+id)));
+  const to=mk('select');Object.entries(D.classes).forEach(([id,c])=>to.append(new Option('Class: '+c.name,'c:'+id)));Object.entries(D.users).filter(([,u])=>!u.archived).forEach(([id,u])=>to.append(new Option('Student: '+(u.displayName||u.email),'s:'+id)));
   const em=mk('input',null,'ans-in');em.type='email';em.maxLength=254;em.placeholder='student@example.com (overrides Assign to)';em.autocomplete='off';
   const due=mk('input');due.type='datetime-local';const m=mk('p');
   [['Title',title],['Type',kind],['Page',lk],['Task',task],['Assign to',to],['Or student email',em],['Due',due]].forEach(([l,e])=>{const L=mk('label',l);L.append(e);g.append(L);});f.append(g,pr);
   f.append(btn('Assign',async()=>{const ev=em.value.trim().toLowerCase();if(ev&&(ev.length>254||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ev))){m.textContent='Enter a valid student email.';return;}
     if(!title.value.trim()||(!to.value&&!ev)||!due.value){m.textContent='Title, who and due date are required.';return;}
-    const hit=ev?Object.keys(D.users).find(u=>String(D.users[u].email||'').toLowerCase()===ev):null;
+    if(ev&&Object.values(D.users).some(u=>u.archived&&String(u.email||'').toLowerCase()===ev)){m.textContent='That student is archived. Restore them first.';return;}
+    const hit=ev?Object.keys(D.users).find(u=>!D.users[u].archived&&String(D.users[u].email||'').toLowerCase()===ev):null;
     let [t,id]=[to.value[0],to.value.slice(2)];if(ev){t=hit?'s':'e';id=hit||ev;}const k=kind.value;const tk=(k==='writing'&&!/^W/.test(task.value))?'W2':(k==='speaking'&&!/^S/.test(task.value))?'S2':(k==='writing'||k==='speaking')?task.value:'';
     const data={title:title.value.trim(),kind:k,link:lk.value,prompt:pr.value,task:tk,classId:t==='c'?id:'',studentUid:t==='s'?id:'',...(t==='e'?{studentEmail:id}:{}),due:Timestamp.fromDate(new Date(due.value+':00+03:00')),createdAt:serverTimestamp()};
     try{const r=await addDoc(collection(db,'assignments'),data);D.asg.push({id:r.id,...data,due:data.due.toDate()});show('Assignments');if(window.PTI_NOTIFY){const rc=t==='e'?[{email:id,displayName:''}]:t==='s'?[D.users[id]||{}]:Object.keys(D.members).filter(u=>D.members[u].classId===id).map(u=>D.users[u]||{});window.PTI_NOTIFY(rc,{...data,due:data.due.toDate()}).then(x=>{const n=mk('p',x.skipped?'Assigned. Email not set up yet, so no email was sent.':`Assigned. Emails sent: ${x.sent}${x.failed?`, failed: ${x.failed}`:''}.`,'disclaimer');document.getElementById('view').prepend(n);setTimeout(()=>n.remove(),8000);});}}catch(e){m.textContent='Could not save the assignment.';}},'gold'),m);v.append(f);
@@ -116,7 +147,7 @@ function card(s){const c=mk('div',null,'card');const u=D.users[s.uid]||{};c.appe
   c.append(g,q,cm,mk('p','Feedback labels'),lb,mk('p','Recommended next lesson'),nl,btn('Save marks',async()=>{const labels=[...lb.querySelectorAll('input:checked')].map(x=>x.value).slice(0,12);
     const data={uid:s.uid,c1:+bands[0].value,c2:+bands[1].value,c3:+bands[2].value,c4:+bands[3].value,overall:+ov.value,comments:cm.value.slice(0,6000),labels,nextLesson:nl.value,markedAt:serverTimestamp()};
     try{await setDoc(doc(db,'feedback',s.id),data);D.fb[s.id]={...data,markedAt:new Date()};m.textContent='Saved. The student can see it now.';}catch(e){m.textContent='Could not save.';}},'gold'),m);return c;}
-function Report(v){const s=mk('select');s.append(new Option('Choose a student',''));Object.entries(D.users).forEach(([id,u])=>s.append(new Option(u.displayName||u.email,id)));s.value=sel||'';s.onchange=()=>{sel=s.value;show('Report');};
+function Report(v){const s=mk('select');s.append(new Option('Choose a student',''));Object.entries(D.users).filter(([,u])=>!u.archived).forEach(([id,u])=>s.append(new Option(u.displayName||u.email,id)));if(sel&&(!D.users[sel]||D.users[sel].archived))sel='';s.value=sel||'';s.onchange=()=>{sel=s.value;show('Report');};
   v.append(s);if(!sel)return;const u=D.users[sel]||{},st=stats(sel);const r=mk('div',null,'report');
   r.append(mk('h2',`Progress report: ${u.displayName||''}`),mk('p',`${u.email||''} \u00b7 ${(D.classes[(D.members[sel]||{}).classId]||{}).name||'No class'} \u00b7 generated ${fmt(new Date())} (Riyadh)`),
     mk('p',`Reading ${st.reading} \u00b7 Listening ${st.listening} \u00b7 ${st.at.length} tests \u00b7 streak ${st.streak} days \u00b7 last active ${fmt(st.last)}`));
@@ -160,7 +191,7 @@ function Tracker(v){const T=window.PTI_TRACK;if(!T){v.append(mk('p','Tracker cou
 async function load(epoch){db=getFirestore(getApp());const ts=x=>x&&x.toDate?x.toDate():null;
   const [us,at,mi,me,cl,as,su,fb]=await Promise.all([getDocs(collection(db,'users')),getDocs(collectionGroup(db,'attempts')),getDocs(collectionGroup(db,'mistakes')),getDocs(collection(db,'members')),getDocs(collection(db,'classes')),getDocs(collection(db,'assignments')),getDocs(collection(db,'submissions')),getDocs(collection(db,'feedback'))]);
   if(epoch!==accessEpoch)return;D={users:{},att:[],mis:[],members:{},classes:{},asg:[],subs:[],fb:{}};
-  us.forEach(d=>{const x=d.data();D.users[d.id]={displayName:x.displayName,email:x.email,lastSeen:ts(x.lastSeen)};});
+  us.forEach(d=>{const x=d.data();D.users[d.id]={displayName:x.displayName,email:x.email,lastSeen:ts(x.lastSeen),archived:!!x.archived,archivedAt:ts(x.archivedAt)};});
   at.forEach(d=>{const x=d.data();D.att.push({...x,date:ts(x.date)||new Date(0)});});mi.forEach(d=>D.mis.push({...d.data(),uid:d.ref.parent.parent.id}));
   me.forEach(d=>D.members[d.id]=d.data());D.classes.all={name:'All students',code:''};cl.forEach(d=>{if(d.id!=='all')D.classes[d.id]=d.data();});as.forEach(d=>D.asg.push({id:d.id,...d.data(),due:ts(d.data().due)}));
   su.forEach(d=>D.subs.push({id:d.id,...d.data(),createdAt:ts(d.data().createdAt)||new Date(0)}));fb.forEach(d=>D.fb[d.id]=d.data());

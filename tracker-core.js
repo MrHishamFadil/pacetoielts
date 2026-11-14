@@ -60,7 +60,7 @@ function analyse(o){
     skills:skillList,tags:tagList,sections:sectionList,recurring:recurring,topWrong:topWrong,assignments:asg,weeks:weekList};}
 // Students the tutor can track: not tutors; those with assignments or recent work first.
 function students(o){var admins=(o.admins||[]).map(function(x){return x.toLowerCase();});
-  return Object.keys(o.users||{}).filter(function(uid){return admins.indexOf(String(o.users[uid].email||'').toLowerCase())<0;}).map(function(uid){var u=o.users[uid];
+  return Object.keys(o.users||{}).filter(function(uid){var u=o.users[uid]||{};if(!o.includeArchived&&u.archived)return false;return admins.indexOf(String(u.email||'').toLowerCase())<0;}).map(function(uid){var u=o.users[uid];
     var at=(o.att||[]).filter(function(a){return a.uid===uid;}),nA=(o.asg||[]).filter(function(a){return appliesTo(a,uid,u,(o.members||{})[uid])&&a.classId!=='all';}).length;
     var last=at.reduce(function(m,a){return a.date>m?a.date:m;},new Date(0));return {uid:uid,name:u.displayName||u.email||uid,email:u.email||'',assigned:nA,attempts:at.length,last:last};})
     .sort(function(a,b){return (b.assigned>0)-(a.assigned>0)||(b.attempts>0)-(a.attempts>0)||b.last-a.last||b.attempts-a.attempts||a.name.localeCompare(b.name);});}
