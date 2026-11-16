@@ -4,3 +4,16 @@
 @media(max-width:850px){.menu{display:block}.nav{width:100%;display:none;flex-direction:column;align-items:stretch;gap:4px;padding:8px 0}.nav.open{display:flex}.nav a{min-height:44px;padding:10px 12px;border:1px solid #c8c5bf;border-radius:8px}.header-inner{gap:10px}.hero{grid-template-columns:1fr;padding-block:38px 40px;gap:30px}.hero-copy{max-width:630px}h1{font-size:clamp(47px,8vw,70px)}.art{max-width:520px;width:100%;justify-self:center}.stage{padding:32px 29px}.section-head{flex-direction:column;align-items:start;gap:16px}.section-head p{max-width:100%}}
 @media(max-width:450px){.wrap{padding-inline:22px}.preview-inner{align-items:start;flex-direction:column;gap:2px}.preview-links{gap:18px}.preview-inner strong{font-size:11px}.header-inner{padding-block:15px}.brand{font-size:22px}.hero{padding-top:30px}h1{font-size:48px;letter-spacing:-2.5px;line-height:1.05}.intro{font-size:16px}.actions{gap:8px}.stage{padding:25px 22px 20px}.paper{padding:20px;transform:rotate(-3deg)}.paper h2{font-size:25px}.paper-top{font-size:9px}.paper p{font-size:12px}.tip{font-size:12px;padding:12px}.note{margin-top:25px;margin-right:4px;font-size:12px}.caption{margin-inline:0}.skills{grid-template-columns:1fr}.skill-title{flex-wrap:nowrap}.skill{padding:22px}.skills-section{padding-block:34px 38px}.ribbon-inner{font-size:10px;gap:13px}.footer-inner{gap:8px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+.official-resources{padding-block:10px 30px}
+.official-resources .section-head p{max-width:360px}
+.official-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0 0 16px}
+.official-groups .bp-step ul,.official-events ul{margin:14px 0 0;padding:0;list-style:none}
+.official-groups .bp-step li,.official-events li{margin:0 0 12px;font-size:15px;line-height:1.6}
+.official-groups .bp-step a,.official-events a{color:#413b72;text-underline-offset:3px}
+.official-events{padding:25px;background:#fffdf8;border:1px solid #232324;border-radius:16px}
+.official-events h3{margin:12px 0 0;font-size:22px;letter-spacing:-.5px}
+.official-events .when{font-weight:700}
+.official-resources .source{font-size:13px;color:#454247;margin:16px 0 0;line-height:1.7}
+@media(max-width:850px){.official-groups{grid-template-columns:1fr}.official-resources{padding-inline:5%}}
+@media(max-width:479px){.official-resources{padding-inline:22px}}
