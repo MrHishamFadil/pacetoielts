@@ -17,3 +17,6 @@
 .official-resources .source{font-size:13px;color:#454247;margin:16px 0 0;line-height:1.7}
 @media(max-width:850px){.official-groups{grid-template-columns:1fr}.official-resources{padding-inline:5%}}
 @media(max-width:479px){.official-resources{padding-inline:22px}}
+
+.button-alt{background:#dded8a;color:#232324}
+@media(max-width:450px){.actions{align-items:stretch}.actions .button{width:100%;height:auto;white-space:normal;text-align:center;justify-content:center;line-height:1.35}}
