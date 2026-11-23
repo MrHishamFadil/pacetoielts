@@ -22,7 +22,7 @@
 .sampler-reveal h3{margin-top:0}
 .sampler-improved{margin:12px 0 0}
 .sampler-cta{display:block;margin:12px 0 0;padding:24px 20px;border-radius:16px;border:1px solid #232324}
-.sampler-cta .button{display:inline-flex;align-items:center;justify-content:center;text-align:center;white-space:normal;line-height:1.35;width:100%;max-width:100%;text-decoration:none;background:#232324;color:#f8f6f1;border-radius:40px;min-height:52px;padding:14px 18px;font-weight:700}
+.sampler-cta .button{display:inline-flex;align-items:center;justify-content:center;text-align:center;white-space:normal;line-height:1.35;width:100%;max-width:100%;text-decoration:none;background:#232324;color:#f8f6f1;border-radius:40px;min-height:52px;padding:14px 18px;font-weight:700;hyphens:manual;overflow-wrap:normal;word-break:normal}
 .sampler-note{font-size:14px;margin:14px 0 0;color:#454247}
 @media(min-width:600px){
   .sampler-prompt,.sampler-para,.sampler-reveal,.sampler-cta{padding:22px 24px}
